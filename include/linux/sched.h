@@ -561,6 +561,9 @@ struct sched_entity {
 	struct sched_avg		avg;
 #endif
 
+	int binder_sender_pid;
+	int binder_sender_tid;
+
 	ANDROID_KABI_RESERVE(1);
 	ANDROID_KABI_RESERVE(2);
 	ANDROID_KABI_RESERVE(3);

@@ -356,7 +356,9 @@ static int __fib_validate_source(struct sk_buff *skb, __be32 src, __be32 dst,
 	} else {
 		swap(fl4.fl4_sport, fl4.fl4_dport);
 	}
-
+	//ASUS_BSP+++
+        pr_debug("[ROUTE-DBG] Validate reverse path: saddr=%pI4, daddr=%pI4", &fl4.saddr, &fl4.daddr);
+	//ASUS_BSP---
 	if (fib_lookup(net, &fl4, &res, 0))
 		goto last_resort;
 	if (res.type != RTN_UNICAST &&

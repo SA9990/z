@@ -16,6 +16,7 @@
 #include <linux/cred.h>
 
 #include <net/sock.h>
+#include <net/tcp.h>
 #include <net/inet_sock.h>
 #include <linux/netfilter/x_tables.h>
 #include <linux/netfilter/xt_owner.h>
@@ -67,14 +68,22 @@ owner_mt(const struct sk_buff *skb, struct xt_action_param *par)
 	struct sock *sk = skb_to_full_sk(skb);
 	struct net *net = xt_net(par);
 
-	if (!sk || !sk->sk_socket || !net_eq(net, sock_net(sk)))
+	if (!sk || !sk->sk_socket || !net_eq(net, sock_net(sk)) || sk->sk_state == TCP_TIME_WAIT)
 		return (info->match ^ info->invert) == 0;
-	else if (info->match & info->invert & XT_OWNER_SOCKET)
+
+        read_lock_bh(&sk->sk_callback_lock);
+
+	if (sk->sk_socket == NULL) {
+		read_unlock_bh(&sk->sk_callback_lock);
+		return (info->match ^ info->invert) == 0;
+	}
+
+	if (info->match & info->invert & XT_OWNER_SOCKET)
 		/*
 		 * Socket exists but user wanted ! --socket-exists.
 		 * (Single ampersands intended.)
 		 */
-		return false;
+		goto out_false;
 
 	read_lock_bh(&sk->sk_callback_lock);
 	filp = sk->sk_socket ? sk->sk_socket->file : NULL;
@@ -125,6 +134,10 @@ owner_mt(const struct sk_buff *skb, struct xt_action_param *par)
 
 	read_unlock_bh(&sk->sk_callback_lock);
 	return true;
+
+out_false:
+	read_unlock_bh(&sk->sk_callback_lock);
+	return false;
 }
 
 static struct xt_match owner_mt_reg __read_mostly = {
@@ -134,7 +147,8 @@ static struct xt_match owner_mt_reg __read_mostly = {
 	.checkentry = owner_check,
 	.match      = owner_mt,
 	.matchsize  = sizeof(struct xt_owner_match_info),
-	.hooks      = (1 << NF_INET_LOCAL_OUT) |
+	.hooks      = (1 << NF_INET_LOCAL_IN) |
+		      (1 << NF_INET_LOCAL_OUT) |
 	              (1 << NF_INET_POST_ROUTING),
 	.me         = THIS_MODULE,
 };
