@@ -6,6 +6,7 @@
 
 #include <linux/module.h>
 #include <cam_sensor_cmn_header.h>
+#include "asus_cam_sensor.h"
 #include "cam_sensor_core.h"
 #include "cam_sensor_util.h"
 #include "cam_soc_util.h"
@@ -885,6 +886,7 @@ int32_t cam_sensor_driver_cmd(struct cam_sensor_ctrl_t *s_ctrl,
 			s_ctrl->sensordata->slave_info.sensor_slave_addr,
 			s_ctrl->sensordata->slave_info.sensor_id);
 
+		asus_cam_sensor_init(s_ctrl); //ASUS_BSP Zhengwei "porting sensor ATD"
 		cam_sensor_free_power_reg_rsc(s_ctrl);
 		rc = cam_sensor_power_down(s_ctrl);
 		if (rc < 0) {
@@ -1270,13 +1272,14 @@ int cam_sensor_power_up(struct cam_sensor_ctrl_t *s_ctrl)
 	int rc;
 	struct cam_sensor_power_ctrl_t *power_info;
 	struct cam_camera_slave_info *slave_info;
-	struct cam_hw_soc_info *soc_info;
+	struct cam_hw_soc_info *soc_info =
+		&s_ctrl->soc_info;
 
 	if (!s_ctrl) {
 		CAM_ERR(CAM_SENSOR, "failed: %pK", s_ctrl);
 		return -EINVAL;
 	}
-
+	CAM_INFO(CAM_SENSOR, "SENSOR POWER UP X sensor_id(0x%x) index(%d)",s_ctrl->sensordata->slave_info.sensor_id,s_ctrl->soc_info.index);
 	power_info = &s_ctrl->sensordata->power_info;
 	slave_info = &(s_ctrl->sensordata->slave_info);
 
@@ -1307,6 +1310,8 @@ int cam_sensor_power_up(struct cam_sensor_ctrl_t *s_ctrl)
 	if (rc < 0)
 		CAM_ERR(CAM_SENSOR, "cci_init failed: rc: %d", rc);
 
+	s_ctrl->power_state = 1;//ASUS_BSP Zhengwei "porting sensor ATD"
+	CAM_INFO(CAM_SENSOR, "SENSOR POWER UP X sensor_id(0x%x) index(%d)",s_ctrl->sensordata->slave_info.sensor_id,s_ctrl->soc_info.index);
 	return rc;
 }
 
@@ -1320,7 +1325,7 @@ int cam_sensor_power_down(struct cam_sensor_ctrl_t *s_ctrl)
 		CAM_ERR(CAM_SENSOR, "failed: s_ctrl %pK", s_ctrl);
 		return -EINVAL;
 	}
-
+	CAM_INFO(CAM_SENSOR, "SENSOR POWER DOWN E sensor_id(0x%x) index(%d)",s_ctrl->sensordata->slave_info.sensor_id,s_ctrl->soc_info.index);
 	power_info = &s_ctrl->sensordata->power_info;
 	soc_info = &s_ctrl->soc_info;
 
@@ -1345,7 +1350,8 @@ int cam_sensor_power_down(struct cam_sensor_ctrl_t *s_ctrl)
 	}
 
 	camera_io_release(&(s_ctrl->io_master_info));
-
+	s_ctrl->power_state = 0;//ASUS_BSP Zhengwei "porting sensor ATD"
+	CAM_INFO(CAM_SENSOR, "SENSOR POWER DOWN X sensor_id(0x%x) index(%d)",s_ctrl->sensordata->slave_info.sensor_id,s_ctrl->soc_info.index);
 	return rc;
 }
 
