@@ -12,6 +12,7 @@
 #include "dsi_drm.h"
 #include "sde_trace.h"
 #include "sde_dbg.h"
+#include "sde_encoder.h"
 
 #define to_dsi_bridge(x)     container_of((x), struct dsi_bridge, base)
 #define to_dsi_state(x)      container_of((x), struct dsi_connector_state, base)
@@ -20,6 +21,33 @@
 #define DEFAULT_PANEL_JITTER_DENOMINATOR	1
 #define DEFAULT_PANEL_JITTER_ARRAY_SIZE		2
 #define DEFAULT_PANEL_PREFILL_LINES	25
+
+/* ASUS BSP Display +++ */
+extern bool asus_display_in_normal_off(void);
+
+static void dsi_bridge_asus_dfps(struct drm_bridge *bridge, int type)
+{
+	int rc = 0;
+	struct dsi_bridge *c_bridge = to_dsi_bridge(bridge);
+
+	if (!bridge) {
+		pr_err("Invalid params\n");
+		return;
+	}
+
+	if (asus_display_in_normal_off()) {
+		pr_err("[Display] skip dfps in display off.\n");
+		return;
+	}
+
+	rc = dsi_display_asus_dfps(c_bridge->display, type);
+	if (rc) {
+		pr_err("[%d] failed to perform a fps set, rc=%d\n",
+			c_bridge->id, rc);
+		return;
+	}
+}
+/* ASUS BSP Display --- */
 
 static struct dsi_display_mode_priv_info default_priv_info = {
 	.panel_jitter_numer = DEFAULT_PANEL_JITTER_NUMERATOR,
@@ -537,6 +565,7 @@ static const struct drm_bridge_funcs dsi_bridge_ops = {
 	.disable      = dsi_bridge_disable,
 	.post_disable = dsi_bridge_post_disable,
 	.mode_set     = dsi_bridge_mode_set,
+	.asus_dfps    = dsi_bridge_asus_dfps,  /* ASUS BSP Display +++ */
 };
 
 int dsi_conn_set_info_blob(struct drm_connector *connector,
