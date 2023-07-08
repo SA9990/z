@@ -1,4 +1,48 @@
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
+
+ifneq (,$(filter ZS670KS,$(ASUS_BUILD_PROJECT)))
+		dtbo-$(CONFIG_ARCH_KONA) += \
+				kona-mtp-overlay.dtbo \
+                zs670ks-evb-asus-overlay.dtbo \
+                zs670ks-sr-asus-overlay.dtbo \
+                zs670ks-sr2-asus-overlay.dtbo \
+                zs670ks-sr3-asus-overlay.dtbo \
+                zs670ks-er-asus-overlay.dtbo \
+                zs670ks-er2-asus-overlay.dtbo \
+                zs670ks-pr-asus-overlay.dtbo \
+                zs670ks-mp-asus-overlay.dtbo
+
+kona-mtp-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
+zs670ks-evb-asus-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
+zs670ks-sr-asus-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
+zs670ks-sr2-asus-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
+zs670ks-sr3-asus-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
+zs670ks-er-asus-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
+zs670ks-er2-asus-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
+zs670ks-pr-asus-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
+zs670ks-mp-asus-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
+else
+
+ifneq (,$(filter ZS661KS,$(ASUS_BUILD_PROJECT)))
+
+        dtbo-$(CONFIG_ARCH_KONA) += \
+                ZS661KS-EVB-overlay.dtbo \
+                ZS661KS-SR-overlay.dtbo \
+                ZS661KS-ER-overlay.dtbo \
+                ZS661KS-ER2-overlay.dtbo \
+                ZS661KS-PR-overlay.dtbo \
+                ZS661KS-PR2-overlay.dtbo \
+                ZS661KS-MP-overlay.dtbo \
+
+ZS661KS-EVB-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
+ZS661KS-SR-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
+ZS661KS-ER-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
+ZS661KS-ER2-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
+ZS661KS-PR-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
+ZS661KS-PR2-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
+ZS661KS-MP-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
+
+else #else ifneq (,$(filter ZS661KS,$(ASUS_BUILD_PROJECT)))
         dtbo-$(CONFIG_ARCH_KONA) += \
                 kona-cdp-overlay.dtbo \
                 kona-cdp-lcd-overlay.dtbo \
@@ -29,7 +73,10 @@ kona-xrfusion-ult-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
 kona-arglass-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
 kona-xrsku4-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
 kona-hdk-overlay.dtbo-base := kona.dtb kona-v2.dtb kona-v2.1.dtb
-else
+endif #endif of ifneq (,$(filter ZS661KS,$(ASUS_BUILD_PROJECT)))
+endif
+
+else #else of ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y) for CONFIG_ARCH_KONA
 dtb-$(CONFIG_ARCH_KONA) += kona-rumi.dtb \
         kona-mtp.dtb \
         kona-mtp-ws.dtb \
