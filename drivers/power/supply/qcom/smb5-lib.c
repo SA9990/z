@@ -2423,6 +2423,14 @@ int smblib_get_prop_batt_status(struct smb_charger *chg,
 	}
 
 	/*
+	 * Smart chaging enabled, report NOT_CHARGING.
+	 */
+	if (smartchg_stop_flag) {
+		val->intval = POWER_SUPPLY_STATUS_NOT_CHARGING;
+		return 0;
+	}
+
+	/*
 	 * If SOC = 0 and we are discharging with input connected, report
 	 * the battery status as DISCHARGING.
 	 */
