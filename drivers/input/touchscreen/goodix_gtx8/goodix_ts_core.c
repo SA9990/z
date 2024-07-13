@@ -111,6 +111,7 @@ extern void enable_aod_processing(bool en);
 extern bool get_aod_processing(void);
 extern int asus_display_global_hbm_mode(void);
 extern void asus_display_report_fod_touched(void);
+extern void notify_fod_pressed(void);
 // ASUS_BSP --- Touch
 /**
  * __do_register_ext_module - register external module
@@ -2941,6 +2942,7 @@ static void goodix_ts_report_finger(struct input_dev *dev,
 						ts_info("KEY_F X = %d, Y = %d", data_x, data_y);
 						input_switch_key(dev, KEY_F);
 						asus_display_report_fod_touched();
+						notify_fod_pressed();
 						ts_info("KEY_F");
 						aod_press = true;
 					} else {
@@ -2981,6 +2983,7 @@ static void goodix_ts_report_finger(struct input_dev *dev,
 						ts_info("KEY_F X = %d, Y = %d", data_x, data_y);
 						input_switch_key(dev, KEY_F);
 						asus_display_report_fod_touched();
+						notify_fod_pressed();
 						ts_info("KEY_F");
 						aod_press = true;
 					} else {
