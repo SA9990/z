@@ -155,6 +155,12 @@
 	};
 };
 
+&pm8150l_rgb_led {
+	blue {
+		status = "disabled";
+	};
+};
+
 &pm8150b_charger {
 	io-channels = <&pm8150b_vadc ADC_MID_CHG_DIV6>,
 		      <&pm8150b_vadc ADC_USB_IN_I>,
