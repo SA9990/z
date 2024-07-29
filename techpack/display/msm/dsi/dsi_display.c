@@ -5615,7 +5615,7 @@ void asus_display_set_local_hbm(int enable)
 		g_display->panel->asus_local_hbm_mode = enable;
 
 		//Bug 20200302: Tianma workaround to fix blink after exit LHBM
-		usleep_range(1000 * 1000, 1001 * 1000);
+		usleep_range(20 * 1000, 21* 1000);
 		dsi_panel_set_local_hbm(g_display->panel, false);
 	}
 }
