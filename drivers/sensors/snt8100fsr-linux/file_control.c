@@ -898,7 +898,7 @@ void grip_raw_enable_func(int val){
 	mutex_unlock(&snt8100fsr_g->ap_lock);
 }
 
-static int grip_all_gesture_status(){
+static int grip_all_gesture_status(void){
 	if(grip_status_g->G_SQUEEZE_EN[0] == 1 || grip_status_g->G_SQUEEZE_EN[1] == 1
 		|| grip_status_g->G_TAP_EN[0] == 1 || grip_status_g->G_TAP_EN[1] == 1
 		|| grip_status_g->G_TAP_EN[2] == 1 || grip_status_g->G_TAP_EN[3] == 1
@@ -910,7 +910,7 @@ static int grip_all_gesture_status(){
 	}
 }
 
-int grip_game_gesture_status(){
+int grip_game_gesture_status(void){
 	if(grip_status_g->G_TAP_EN[0] == 1 || grip_status_g->G_TAP_EN[1] == 1
 		|| grip_status_g->G_TAP_EN[2] == 1 || grip_status_g->G_TAP_EN[3] == 1
 		|| grip_status_g->G_SWIPE_EN[0] == 1 || grip_status_g->G_SWIPE_EN[1] == 1
@@ -921,7 +921,7 @@ int grip_game_gesture_status(){
 	}
 }
 
-static void grip_checkToLowPower_noLock(){
+static void grip_checkToLowPower_noLock(void){
 	if(grip_all_gesture_status()){
 		/* Do nothing */
 	}else{ /* No gesture or raw enable */
@@ -2924,7 +2924,7 @@ static void Read_Grip_K_data(void){
 	Grip_B2_F_value = Read_reg & 0x00ff;
 	PRINT_INFO("B0:0x%x, B1:0x%x", Grip_B0_F_value, Grip_B1_F_value);
 }
-static void GripK_magnification(){
+static void GripK_magnification(void){
   /*
 	float scale_factory = 0;
 	uint16_t Real_K = 0;

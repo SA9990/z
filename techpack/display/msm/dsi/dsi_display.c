@@ -5620,7 +5620,7 @@ void asus_display_set_local_hbm(int enable)
 	}
 }
 
-void asus_display_set_panel_aod_bl()
+void asus_display_set_panel_aod_bl(void)
 {
 	if (strncmp(lcd_stage, "2", 1) == 0){ //SR
 		asus_alpm_bl_high = 344;

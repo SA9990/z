@@ -410,7 +410,7 @@ static void rt5683_CodecPowerBack(struct snd_soc_component *component)
 	msleep(5);
 }
 
-static void rt5683_CodecPowerSaving()
+static void rt5683_CodecPowerSaving(void)
 {
 	regmap_update_bits(rt5683->regmap,RT5683_HP_SIG_SRC_CTRL,Sel_hp_sig_sour1,ByRegister); //Depop
 	regmap_update_bits(rt5683->regmap,0x0063,0xFE,0x00); //PowerOFF   - Slow VREF for performance + Enable MBIAS/Bandgap
@@ -439,7 +439,7 @@ static void rt5683_CodecPowerSaving()
 	regmap_write(regmap, RT5683_RESET, 0);
 }*/
 
-static void rt5683_NoPlayback_NoRecording_Control()
+static void rt5683_NoPlayback_NoRecording_Control(void)
 {
 	unsigned int silence_det;
 	regmap_read(rt5683->regmap, 0x1B05, &silence_det);
@@ -467,7 +467,7 @@ static void rt5683_NoPlayback_NoRecording_Control()
 	pr_err("%s: RT5683 Control No Playback +No Recording\n", __func__);
 }
 
-static void rt5683_Playback_and_Recording_Control()
+static void rt5683_Playback_and_Recording_Control(void)
 {
 	unsigned int silence_det;
 	if(rt5683->g_PlabackHPStatus == 0)

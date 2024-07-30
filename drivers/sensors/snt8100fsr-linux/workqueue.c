@@ -63,7 +63,7 @@ int workqueue_init_snt(void) {
     return 0;
 }
 
-void workqueue_cleanup() {
+void workqueue_cleanup(void) {
     /* Wait for all the work in the queue to complete before destroying the work queue */
     flush_workqueue(wq);
     destroy_workqueue(wq);
