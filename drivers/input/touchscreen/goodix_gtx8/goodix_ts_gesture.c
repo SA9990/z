@@ -696,9 +696,9 @@ static int gsx_gesture_exit(struct goodix_ts_core *core_data,
 // ASUS_BSP +++ Touch
 static int check_power(void)
 {
-	bool enable_power = false;
+	//bool enable_power = false;
 	
-	if ((atomic_read(&gsx_gesture->zen_motion) == 0) &&
+	/*if ((atomic_read(&gsx_gesture->zen_motion) == 0) &&
 		(atomic_read(&gsx_gesture->dclick) == 0) &&
 		(atomic_read(&gsx_gesture->swipeup) == 0) &&
 		(atomic_read(&gsx_gesture->aod_enable) == 0) &&
@@ -707,8 +707,10 @@ static int check_power(void)
 		enable_power = false;
 	} else {
 		enable_power = true;
-	}
-	
+	}*/
+
+	bool enable_power = true;
+
 	if (asus_var_regulator_always_on != enable_power) {
 		asus_var_regulator_always_on = enable_power;
 		ts_info("Enable power %d", asus_var_regulator_always_on);
@@ -1132,7 +1134,7 @@ static int gsx_gesture_before_suspend(struct goodix_ts_core *core_data,
 		return 0;
 	}	
 
-	if ((atomic_read(&gsx_gesture->zen_motion) == 0) &&
+	/*if ((atomic_read(&gsx_gesture->zen_motion) == 0) &&
 		(atomic_read(&gsx_gesture->dclick) == 0) &&
 		(atomic_read(&gsx_gesture->swipeup) == 0) &&
 		(atomic_read(&gsx_gesture->aod_enable) == 0) &&
@@ -1140,7 +1142,7 @@ static int gsx_gesture_before_suspend(struct goodix_ts_core *core_data,
 		(atomic_read(&gsx_gesture->aod_ctrl_mode) == 0)) {
 		ts_info("Gesture not enable, going to deep sleep mode");
 		return 0;
-	}
+	}*/
 
 	if (!gesture_cmd->initialized) {
 		ts_err("Uninitialized doze command");
