@@ -94,6 +94,7 @@ bool asus_var_ever_power_off = false;   //workaround for boost MDP clock
 int  asus_alpm_bl_high = 344;
 int  asus_alpm_bl_low = 0;
 char lcd_stage[10];
+bool asus_waking_from_aod = false;	//workaround screen off fod on aod
 
 // variables that only used for test
 bool asus_var_regulator_always_on = false; //display power never turned off
@@ -1434,6 +1435,7 @@ int dsi_display_set_power(struct drm_connector *connector,
 			display->panel->power_mode == SDE_MODE_DPMS_LP2) &&
 			!asus_var_manual_idle_out) {
 			pr_err("[Display] exit AOD, enter NOLP\n");
+			asus_waking_from_aod = true;
 			rc = dsi_panel_set_nolp(display->panel);
 		}
 
@@ -1442,7 +1444,6 @@ int dsi_display_set_power(struct drm_connector *connector,
 			pr_err("[Display] LP2 -> ON and need global HBM, re-enable it\n");
 			asus_var_global_hbm_pending = true;
 		}
-
 		// ASUS_BSP +++ Touch
 		phone_touch_resume();
 		// ASUS_BSP --- Touch
@@ -1453,6 +1454,7 @@ int dsi_display_set_power(struct drm_connector *connector,
 
 		// switch the correct fps from upper layer
 		asus_display_apply_fps_setting();
+		asus_waking_from_aod = false;
 		break;
 	case SDE_MODE_DPMS_OFF:
 	default:
@@ -5605,6 +5607,17 @@ void asus_display_set_local_hbm(int enable)
 	}
 
 	if (enable) {
+		/* The delay was added to:
+		   - Accommodate for the flicker when entering nolp, increase
+ 		     the success rate when using screen off udfps on AOD.
+		   - Correctly set the brightness when using screen off udfps
+		     on normal screen off.
+		*/
+		if (asus_waking_from_aod)
+			usleep_range(100 * 1000, 101* 1000);
+		else
+			usleep_range(10 * 1000, 11* 1000);
+
 		dsi_panel_set_local_hbm(g_display->panel, true);
 		gpio_set_value(g_display->asus_fod_exi1_gpio, enable);
 		gpio_set_value(g_display->asus_fod_exi2_gpio, enable);
