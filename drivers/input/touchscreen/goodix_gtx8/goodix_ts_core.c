@@ -3940,24 +3940,24 @@ static void goodix_ts_lateresume(struct early_suspend *h)
 }
 #endif
 
-#ifdef CONFIG_PM
-#if !defined(CONFIG_FB) && !defined(CONFIG_HAS_EARLYSUSPEND)
+/*#ifdef CONFIG_PM
+#if !defined(CONFIG_FB) && !defined(CONFIG_HAS_EARLYSUSPEND)*/
 /**
  * goodix_ts_pm_suspend - PM suspend function
  * Called by kernel during system suspend phrase
  */
-static int goodix_ts_pm_suspend(struct device *dev)
+/*static int goodix_ts_pm_suspend(struct device *dev)
 {
 	struct goodix_ts_core *core_data =
 		dev_get_drvdata(dev);
 	ts_info("goodix_ts_pm_suspend");
 	return goodix_ts_suspend(core_data);
-}
+}*/
 /**
  * goodix_ts_pm_resume - PM resume function
  * Called by kernel during system wakeup
  */
-static int goodix_ts_pm_resume(struct device *dev)
+/*static int goodix_ts_pm_resume(struct device *dev)
 {
 	struct goodix_ts_core *core_data =
 		dev_get_drvdata(dev);
@@ -3965,7 +3965,7 @@ static int goodix_ts_pm_resume(struct device *dev)
 	return goodix_ts_resume(core_data);
 }
 #endif
-#endif
+#endif*/
 
 /**
  * goodix_generic_noti_callback - generic notifier callback
@@ -4208,14 +4208,14 @@ static int goodix_ts_remove(struct platform_device *pdev)
 	return 0;
 }
 
-#ifdef CONFIG_PM
+/*#ifdef CONFIG_PM
 static const struct dev_pm_ops dev_pm_ops = {
 #if !defined(CONFIG_FB) && !defined(CONFIG_HAS_EARLYSUSPEND)
 	.suspend = goodix_ts_pm_suspend,
 	.resume = goodix_ts_pm_resume,
 #endif
 };
-#endif
+#endif*/
 
 static const struct platform_device_id ts_core_ids[] = {
 	{.name = GOODIX_CORE_DRIVER_NAME},
@@ -4227,9 +4227,9 @@ static struct platform_driver goodix_ts_driver = {
 	.driver = {
 		.name = GOODIX_CORE_DRIVER_NAME,
 		.owner = THIS_MODULE,
-#ifdef CONFIG_PM
+/*#ifdef CONFIG_PM
 		.pm = &dev_pm_ops,
-#endif
+#endif*/
 	},
 	.probe = goodix_ts_probe,
 	.remove = goodix_ts_remove,
