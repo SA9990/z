@@ -1407,10 +1407,8 @@ int dsi_display_set_power(struct drm_connector *connector,
 			phone_touch_suspend();
 			// ASUS_BSP --- Touch
 		}
-
-		// set the default AOD backlight to the last backlight
-		if (g_display->panel->asus_last_user_aod_bl != 0)
-			dsi_panel_set_backlight(g_display->panel, g_display->panel->asus_last_user_aod_bl);
+		display->panel->power_mode = power_mode;
+		dsi_panel_set_backlight(g_display->panel, 0);
 		break;
 	case SDE_MODE_DPMS_LP2:
 		pr_err("[Display] enter LP2 doze suspend\n");
@@ -1429,6 +1427,8 @@ int dsi_display_set_power(struct drm_connector *connector,
 			g_display->panel->asus_global_hbm_mode = 0;
 		}
 		rc = dsi_panel_set_lp2(display->panel);
+		display->panel->power_mode = power_mode;
+		dsi_panel_set_backlight(g_display->panel, 0);
 		break;
 	case SDE_MODE_DPMS_ON:
 		if ((display->panel->power_mode == SDE_MODE_DPMS_LP1 ||

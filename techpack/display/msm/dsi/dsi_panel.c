@@ -749,11 +749,9 @@ int asus_display_convert_backlight(struct dsi_panel *panel, int bl_lvl)
 
 	if ((asus_display_in_aod() || !bl_lvl) && !panel->asus_global_hbm_mode) {
 		if (bl_lvl > ASUS_AOD_THRES || !bl_lvl) {
-			panel->asus_last_user_aod_bl = bl_lvl;
 			backlight_converted = asus_alpm_bl_high;
 			pr_err("[Display] convert to %d, reason AOD\n", asus_alpm_bl_high);
 		} else if (bl_lvl == ASUS_AOD_THRES){
-			panel->asus_last_user_aod_bl = bl_lvl;
 			backlight_converted = asus_alpm_bl_low;
 			pr_err("[Display] convert to %d, reason AOD\n", asus_alpm_bl_low);
 		}
@@ -3719,7 +3717,6 @@ struct dsi_panel *dsi_panel_get(struct device *parent,
 	panel->asus_global_hbm_mode = 0;
 	panel->asus_local_hbm_mode = 0;
 	panel->panel_first_bootup = true;
-	panel->asus_last_user_aod_bl = 0;
 
 	return panel;
 error:
