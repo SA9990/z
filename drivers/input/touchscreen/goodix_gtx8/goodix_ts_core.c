@@ -2391,13 +2391,14 @@ static void goodix_resume_work(struct work_struct *work)
 	} else {
 		ts_info("resume ... ");
 	}
+
 	mutex_lock(&gts_core_data->gts_suspend_mutex);
 	goodix_ts_resume(gts_core_data);
-	goodix_ts_switch_sample_rate(gts_core_data);
-	goodix_ts_rotation(gts_core_data, gts_core_data->rotation);
-
 	mutex_unlock(&gts_core_data->gts_suspend_mutex);
-	
+
+	goodix_ts_rotation(gts_core_data, gts_core_data->rotation);
+	goodix_ts_switch_sample_rate(gts_core_data);
+
 	process_resume = false;
 	ts_info("resume_work ---");
 }
