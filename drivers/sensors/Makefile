@@ -5,7 +5,7 @@ obj-$(CONFIG_SENSORS_ICM206XX)	+= icm206xx.o
 obj-y                           += ASH/
 ifdef CONFIG_MACH_ASUS_ZS661KS
 ifdef CONFIG_MACH_ASUS_ZS661KS
-obj-y				+= snt8100fsr-linux/
+#obj-y				+= snt8100fsr-linux/
 KBUILD_CFLAGS += -DONE_PL_CHIP
 KBUILD_CFLAGS += -DZS661KS_PROJECT
 else #ZS670KS
