@@ -4939,7 +4939,6 @@ static ssize_t smartchg_stop_charging_store(struct device *dev,
 
 	if (tmp == 0) {
 		CHG_DBG("Smart charge enable charging\n");
-		smartchg_stop_flag = 0;
 		rc = smblib_masked_write(smbchg_dev, CHARGING_ENABLE_CMD_REG, CHARGING_ENABLE_CMD_BIT, CHARGING_ENABLE_CMD_BIT);
 		if (rc < 0) {
 			printk("[BAT][CHG] Couldn't write charging_enable rc = %d\n", rc);
@@ -4957,6 +4956,25 @@ static ssize_t smartchg_stop_charging_store(struct device *dev,
 
 	if (side_pps_flag || btm_pps_flag)
 		pca9468_smartchg_stop_charging(tmp);
+
+	/* Do suspend/unsuspend when resuming charging to work around possible fast charge issue. */
+	if (tmp == 0) {
+		CHG_DBG("Smart charge resume charging, set DisableCharging\n");
+		asus_suspend_cmd_flag = 1;
+		rc = smblib_set_usb_suspend(smbchg_dev, 1);
+		if (PE_check_asus_vid() || rt_chg_check_asus_vid())
+			pmic_set_pca9468_charging(false);
+
+		CHG_DBG("Smart charge resume charging, set EnableCharging\n");
+		asus_suspend_cmd_flag = 0;
+		rc = smblib_set_usb_suspend(smbchg_dev, 0);
+		if (PE_check_asus_vid() || rt_chg_check_asus_vid())
+			pmic_set_pca9468_charging(true);
+
+		smartchg_stop_flag = 0;
+
+		power_supply_changed(smbchg_dev->batt_psy);
+	}
 
 	return len;
 }
