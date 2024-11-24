@@ -221,7 +221,7 @@ int rt_chg_get_vid(void) {
     struct tcpc_device *tcpc;
     uint32_t vdos[VDO_MAX_NR];
 
-    tcpc = tcpc_dev_get_by_name("type_c_port0");
+    tcpc = tcpc_dev_get_by_name("port0_typec");
 
     ret = tcpm_inquire_pd_partner_inform(tcpc, vdos);
 	if(ret < 0) {
@@ -252,7 +252,7 @@ bool rt_chg_check_asus_vid(void) {
 int rt_chg_get_curr_state(void) {
 	int curr;
     struct tcpc_device *tcpc;
-    tcpc = tcpc_dev_get_by_name("type_c_port0");
+    tcpc = tcpc_dev_get_by_name("port0_typec");
 
     curr = tcpm_inquire_typec_remote_rp_curr(tcpc);
     pr_info("%s: curr = %d\n", __func__, curr);
@@ -262,7 +262,7 @@ EXPORT_SYMBOL(rt_chg_get_curr_state);
 
 int rt_chg_get_during_swap(void) {
     struct tcpc_device *tcpc;
-    tcpc = tcpc_dev_get_by_name("type_c_port0");
+    tcpc = tcpc_dev_get_by_name("port0_typec");
 
     pr_info("%s: during swap = %d\n", __func__, tcpc->pd_port.pe_data.during_swap);
     return tcpc->pd_port.pe_data.during_swap;
@@ -271,7 +271,7 @@ EXPORT_SYMBOL(rt_chg_get_during_swap);
 
 int typec_disable_function(bool disable) {
     struct tcpc_device *tcpc;
-    tcpc = tcpc_dev_get_by_name("type_c_port0");
+    tcpc = tcpc_dev_get_by_name("port0_typec");
 
     tcpm_typec_disable_function(tcpc, disable);
     pr_info("%s enter, disable= %d\n", __func__, disable);
@@ -339,7 +339,7 @@ static int rt_chg_handle_source_vbus(struct tcp_notify *tcp_noti)
 	//val.intval = enable;
 	//chg->desc->set_property(chg, POWER_SUPPLY_PROP_ONLINE, &val);
 
-	//tcpc = tcpc_dev_get_by_name("type_c_port0");
+	//tcpc = tcpc_dev_get_by_name("port0_typec");
 	//if (!tcpc)
 		//return -EINVAL;
 
@@ -478,7 +478,7 @@ static int chg_tcp_notifer_call(struct notifier_block *nb,
 	uint16_t dpm_flags;
 	int ret = 0;
 	struct tcpc_device *tcpc;
-	tcpc = tcpc_dev_get_by_name("type_c_port0");
+	tcpc = tcpc_dev_get_by_name("port0_typec");
 
 	switch (event) {
 	case TCP_NOTIFY_PR_SWAP:
@@ -923,7 +923,7 @@ static int rt_charger_probe(struct platform_device *pdev)
 	}
 
 	/* Get tcpc device by tcpc_device'name */
-	info->tcpc = tcpc_dev_get_by_name("type_c_port0");
+	info->tcpc = tcpc_dev_get_by_name("port0_typec");
 	if (!info->tcpc) {
 		dev_err(&pdev->dev, "get rt1711-tcpc fail\n");
 		//power_supply_unregister(&info->chg);

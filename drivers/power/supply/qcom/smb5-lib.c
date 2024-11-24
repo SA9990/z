@@ -6796,7 +6796,7 @@ void asus_slow_insertion_work(struct work_struct *work)
 }*/
 //[---]WA for BTM_500mA issue
 
-#define RT_RESET_PATH	"/sys/devices/platform/soc/884000.i2c/i2c-6/6-004e/tcpc/type_c_port0/pd_test"
+#define RT_RESET_PATH	"/sys/devices/platform/soc/884000.i2c/i2c-6/6-004e/tcpc/port0_typec/pd_test"
 void asus_call_rt_reset_work(struct work_struct *work)
 {
 	struct file *fp = NULL;

@@ -1308,7 +1308,7 @@ static int rt_parse_dt(struct rt1711_chip *chip, struct device *dev)
 
 	pr_info("%s\n", __func__);
 
-	/*np = of_find_node_by_name(NULL, "type_c_port0");
+	/*np = of_find_node_by_name(NULL, "port0_typec");
 	if (!np) {
 		pr_err("%s find node rt1711 fail\n", __func__);
 		return -ENODEV;
