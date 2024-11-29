@@ -90,6 +90,7 @@ volatile bool dual_port_once_flag = 0;
 volatile bool station_cable_flag = 0;
 bool bSkinTempOver = 0; // Add for ASUS SW INOV use
 bool b_is_MTBF_device = false;
+bool notify_touch_usbplug_flag = false;
 //ASUS BSP : Add ASUS variables ---
 
 //ASUS BSP : Add extern variables +++
@@ -6054,8 +6055,12 @@ void asus_typec_removal_function(struct smb_charger *chg)
 	}
 	
 	if (notify_touch_usbplug) {
-	    notify_touch_usbplug = false;
-	    gts_usb_plugin(false);
+		if (!notify_touch_usbplug_flag) {
+			schedule_delayed_work(&smbchg_dev->notify_touch_usbplug_work, msecs_to_jiffies(5000));
+		} else {
+	    		notify_touch_usbplug = false;
+	    		gts_usb_plugin(false);
+		}
 	}
 }
 
@@ -8877,8 +8882,12 @@ void smblib_usb_plugin_hard_reset_locked(struct smb_charger *chg)
 					vbus_rising ? "attached" : "detached");
 	if (vbus_rising) {
 	    if (!notify_touch_usbplug) {
-	      notify_touch_usbplug = true;
-	      gts_usb_plugin(true);
+		if (!notify_touch_usbplug_flag) {
+			schedule_delayed_work(&smbchg_dev->notify_touch_usbplug_work, msecs_to_jiffies(5000));
+		} else {
+	      		notify_touch_usbplug = true;
+	      		gts_usb_plugin(true);
+		}
 	    }
 	}
 }
@@ -9161,8 +9170,12 @@ void smblib_usb_plugin_locked(struct smb_charger *chg)
 					vbus_rising ? "attached" : "detached");
 	if (vbus_rising) {
 	    if (!notify_touch_usbplug) {
-	      notify_touch_usbplug = true;
-	      gts_usb_plugin(true);
+		if (!notify_touch_usbplug_flag) {
+			schedule_delayed_work(&smbchg_dev->notify_touch_usbplug_work, msecs_to_jiffies(5000));
+		} else {
+	      		notify_touch_usbplug = true;
+	      		gts_usb_plugin(true);
+		}
 	    }
 	}
 }
@@ -11583,6 +11596,17 @@ static void safety_timer_resume_charging_work(struct work_struct *work)
 	}
 }
 
+static void notify_touch_usbplug_work(struct work_struct *work)
+{
+	struct delayed_work *delayed_work = to_delayed_work(work);
+	struct smb_charger *chg = container_of(delayed_work, struct smb_charger,
+							notify_touch_usbplug_work);
+
+	gts_usb_plugin(notify_touch_usbplug ? false : true);
+	notify_touch_usbplug = notify_touch_usbplug ? false : true;
+	notify_touch_usbplug_flag = true;
+}
+
 static int smblib_create_votables(struct smb_charger *chg)
 {
 	int rc = 0;
@@ -11795,6 +11819,7 @@ int smblib_init(struct smb_charger *chg)
 	INIT_DELAYED_WORK(&chg->asus_check_vbus_work, asus_check_vbus_work);// WA for aohai adapter
 	alarm_init(&bat_alarm, ALARM_REALTIME, batAlarm_handler);
 	INIT_DELAYED_WORK(&chg->safety_timer_resume_charging_work, safety_timer_resume_charging_work);
+	INIT_DELAYED_WORK(&chg->notify_touch_usbplug_work, notify_touch_usbplug_work);
 	//ASUS BSP : Add the work ---
 
 	if (strstr(saved_command_line, "androidboot.serialno=L6AIBP000066MDG")

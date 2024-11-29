@@ -549,6 +549,7 @@ struct smb_charger {
 	struct delayed_work	asus_check_vbus_work;//WA for aohai adapter
 #endif
 	struct delayed_work	safety_timer_resume_charging_work;
+	struct delayed_work	notify_touch_usbplug_work;
 	/* asus work --- */
 
 
