@@ -325,6 +325,7 @@
 			qcom,num-lpg-channels = <3>;
 			qcom,lut-patterns = <0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
 					     0 0 0 0 0 0 0 0 0 0 0 0 10 10 10 10 10 10 10 10 10>;
+			qcom,sync-channel-ids = <1 2 3>;
 			lpg1 {
 				qcom,lpg-chan-id = <1>;
 				qcom,ramp-step-ms = <25>;
