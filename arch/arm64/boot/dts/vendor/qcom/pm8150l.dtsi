@@ -323,39 +323,42 @@
 			reg-names = "lpg-base", "lut-base";
 			#pwm-cells = <2>;
 			qcom,num-lpg-channels = <3>;
-			qcom,lut-patterns = <10 10 10 10 0 0 0 0 0 0 0
-						0 0 0 0 0 0 0 0 0 0>;
+			qcom,lut-patterns = <0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+					     0 0 0 0 0 0 0 0 0 0 0 0 10 10 10 10 10 10 10 10 10>;
 			lpg1 {
 				qcom,lpg-chan-id = <1>;
-				qcom,ramp-step-ms = <100>;
+				qcom,ramp-step-ms = <25>;
 				qcom,ramp-pause-hi-count = <2>;
 				qcom,ramp-pause-lo-count = <2>;
 				qcom,ramp-low-index = <0>;
-				qcom,ramp-high-index = <20>;
+				qcom,ramp-high-index = <45>;
 				qcom,ramp-from-low-to-high;
 				qcom,ramp-pattern-repeat;
+				qcom,ramp-toggle;
 			};
 
 			lpg2 {
 				qcom,lpg-chan-id = <2>;
-				qcom,ramp-step-ms = <100>;
+				qcom,ramp-step-ms = <25>;
 				qcom,ramp-pause-hi-count = <2>;
 				qcom,ramp-pause-lo-count = <2>;
 				qcom,ramp-low-index = <0>;
-				qcom,ramp-high-index = <20>;
+				qcom,ramp-high-index = <45>;
 				qcom,ramp-from-low-to-high;
 				qcom,ramp-pattern-repeat;
+				qcom,ramp-toggle;
 			};
 
 			lpg3 {
 				qcom,lpg-chan-id = <3>;
-				qcom,ramp-step-ms = <100>;
+				qcom,ramp-step-ms = <25>;
 				qcom,ramp-pause-hi-count = <2>;
 				qcom,ramp-pause-lo-count = <2>;
 				qcom,ramp-low-index = <0>;
-				qcom,ramp-high-index = <20>;
+				qcom,ramp-high-index = <45>;
 				qcom,ramp-from-low-to-high;
 				qcom,ramp-pattern-repeat;
+				qcom,ramp-toggle;
 			};
 		};
 
