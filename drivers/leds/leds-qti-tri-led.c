@@ -18,6 +18,7 @@
 #include <linux/pwm.h>
 #include <linux/regmap.h>
 #include <linux/types.h>
+#include <linux/slab.h>
 
 #define TRILED_REG_TYPE			0x04
 #define TRILED_REG_SUBTYPE		0x05
@@ -35,11 +36,23 @@
 #define TRILED_NUM_MAX			3
 
 #define PWM_PERIOD_DEFAULT_NS		1000000
+#define RAMP_STEP_DEFAULT_MS		50
 
 struct pwm_setting {
 	u64	pre_period_ns;
 	u64	period_ns;
 	u64	duty_ns;
+	u32	ramp_step_ms;
+	bool	changed;
+	int	max_pattern_length;
+	u64	*duty_pattern_percentages;
+	struct	pwm_output_pattern *output_pattern;
+};
+
+struct breath_pattern {
+	u32	ramp_step_ms;
+	u32	pause_hi_ms;
+	u32	pause_lo_ms;
 };
 
 struct led_setting {
@@ -48,6 +61,7 @@ struct led_setting {
 	enum led_brightness	brightness;
 	bool			blink;
 	bool			breath;
+	struct breath_pattern	breath_pattern;
 };
 
 struct qpnp_led_dev {
@@ -74,6 +88,8 @@ struct qpnp_tri_led_chip {
 	u16			reg_base;
 	u8			subtype;
 	u8			bitmap;
+	u32			*lut_patterns; /* patterns in percentage */
+	int			lut_pattern_length;
 };
 
 static int qpnp_tri_led_read(struct qpnp_tri_led_chip *chip, u16 addr, u8 *val)
@@ -107,6 +123,65 @@ static int qpnp_tri_led_masked_write(struct qpnp_tri_led_chip *chip,
 	return rc;
 }
 
+static void qpnp_tri_led_update_pwm_pattern(struct qpnp_led_dev *led,
+					    struct pwm_setting *pwm)
+{
+	int i = 0;
+	u32 pause_hi_steps, pause_lo_steps, step_ms;
+	u32 pattern_len, brightness;
+	struct pwm_output_pattern *pattern = NULL;
+
+	if (!pwm->duty_pattern_percentages || pwm->max_pattern_length < 1) {
+		dev_warn(led->chip->dev, "Invalid PWM settings\n");
+		goto updated;
+	}
+
+	pattern_len = pwm->max_pattern_length;
+	brightness = led->led_setting.brightness;
+
+	step_ms = led->led_setting.breath_pattern.ramp_step_ms;
+	if (!step_ms) {
+		dev_warn(led->chip->dev, "Invalid step_ms, using default 1ms\n");
+		step_ms = 1;
+	}
+
+	pause_hi_steps = led->led_setting.breath_pattern.pause_hi_ms / step_ms;
+	pause_lo_steps = led->led_setting.breath_pattern.pause_lo_ms / step_ms;
+
+	pattern = kzalloc(sizeof(*pattern), GFP_KERNEL);
+	if (!pattern) {
+		dev_err(led->chip->dev, "Failed to allocate memory for pattern\n");
+		goto updated;
+	}
+
+	for (i = 0; i < pattern_len; i++) {
+		pwm->duty_pattern_percentages[i] = (u32)i * brightness / pattern_len;
+	}
+
+	*pattern = (struct pwm_output_pattern){
+		.pause_lo_count = pause_lo_steps,
+		.pause_hi_count = pause_hi_steps,
+		.ramp_dir_low_to_hi = true,
+		.toggle = true,
+		.pattern_repeat = true,
+		.duty_pattern_percentages = pwm->duty_pattern_percentages,
+		.num_entries = pattern_len,
+		.step_ms = step_ms,
+	};
+
+	if (pwm->output_pattern)
+		kfree(pwm->output_pattern);
+	pwm->output_pattern = pattern;
+
+	dev_info(led->chip->dev,
+		 "%s: Breath pattern: ramp_step=%dms, pause_hi=%d steps, pause_lo=%d steps, repeat=%s\n",
+		 led->cdev.name, step_ms, pause_hi_steps, pause_lo_steps,
+		 pattern->pattern_repeat ? "true" : "false");
+
+updated:
+	pwm->changed = false;
+}
+
 static int __tri_led_config_pwm(struct qpnp_led_dev *led,
 				struct pwm_setting *pwm)
 {
@@ -114,15 +189,17 @@ static int __tri_led_config_pwm(struct qpnp_led_dev *led,
 	int rc;
 
 	pwm_get_state(led->pwm_dev, &pstate);
+	pstate.enabled = false;
+	pwm_apply_state(led->pwm_dev, &pstate);
 	pstate.enabled = !!(pwm->duty_ns != 0);
 	pstate.period = pwm->period_ns;
 	pstate.duty_cycle = pwm->duty_ns;
 	pstate.output_type = led->led_setting.breath ?
 		PWM_OUTPUT_MODULATED : PWM_OUTPUT_FIXED;
-	/* Use default pattern in PWM device */
-	pstate.output_pattern = NULL;
+	if (pwm->changed && led->led_setting.breath)
+		qpnp_tri_led_update_pwm_pattern(led, pwm);
+	pstate.output_pattern = pwm->output_pattern;
 	rc = pwm_apply_state(led->pwm_dev, &pstate);
-
 	if (rc < 0)
 		dev_err(led->chip->dev, "Apply PWM state for %s led failed, rc=%d\n",
 					led->cdev.name, rc);
@@ -240,6 +317,8 @@ static int qpnp_tri_led_set(struct qpnp_led_dev *led)
 	dev_dbg(led->chip->dev, "PWM settings for %s led: period = %lluns, duty = %lluns\n",
 				led->cdev.name, period_ns, duty_ns);
 
+	if (led->led_setting.breath)
+		led->pwm_setting.changed = true;
 	led->pwm_setting.duty_ns = duty_ns;
 	led->pwm_setting.period_ns = period_ns;
 
@@ -255,7 +334,7 @@ static int qpnp_tri_led_set(struct qpnp_led_dev *led)
 		led->blinking = true;
 		led->breathing = false;
 	} else if (led->led_setting.breath) {
-		led->cdev.brightness = LED_FULL;
+		led->cdev.brightness = led->led_setting.brightness;
 		led->blinking = false;
 		led->breathing = true;
 	} else {
@@ -279,18 +358,19 @@ static int qpnp_tri_led_set_brightness(struct led_classdev *led_cdev,
 		brightness = LED_FULL;
 
 	if (brightness == led->led_setting.brightness &&
-			!led->blinking && !led->breathing) {
+			!led->blinking) {
 		mutex_unlock(&led->lock);
 		return 0;
 	}
 
 	led->led_setting.brightness = brightness;
-	if (!!brightness)
+	if (!!brightness) {
 		led->led_setting.off_ms = 0;
-	else
+	} else {
 		led->led_setting.on_ms = 0;
+		led->led_setting.breath = false;
+	}
 	led->led_setting.blink = false;
-	led->led_setting.breath = false;
 
 	rc = qpnp_tri_led_set(led);
 	if (rc)
@@ -379,7 +459,12 @@ static ssize_t breath_store(struct device *dev, struct device_attribute *attr,
 
 	led->led_setting.blink = false;
 	led->led_setting.breath = breath;
-	led->led_setting.brightness = breath ? LED_FULL : LED_OFF;
+
+	if (breath)
+		led->led_setting.brightness = led->cdev.brightness ? led->cdev.brightness : led->cdev.max_brightness;
+	else
+		led->led_setting.brightness = LED_OFF;
+
 	rc = qpnp_tri_led_set(led);
 	if (rc < 0)
 		dev_err(led->chip->dev, "Set led failed for %s, rc=%d\n",
@@ -391,8 +476,174 @@ unlock:
 }
 
 static DEVICE_ATTR_RW(breath);
+
+static ssize_t pause_hi_show(struct device *dev, struct device_attribute *attr,
+							char *buf)
+{
+	struct led_classdev *led_cdev = dev_get_drvdata(dev);
+	struct qpnp_led_dev *led =
+		container_of(led_cdev, struct qpnp_led_dev, cdev);
+
+	return snprintf(buf, PAGE_SIZE, "%d\n", led->led_setting.breath_pattern.pause_hi_ms);
+}
+
+static ssize_t pause_hi_store(struct device *dev,
+					struct device_attribute *attr,
+					const char *buf, size_t count)
+{
+	int rc;
+	u32 pause_hi_ms;
+	struct led_classdev *led_cdev = dev_get_drvdata(dev);
+	struct qpnp_led_dev *led =
+		container_of(led_cdev, struct qpnp_led_dev, cdev);
+
+	rc = kstrtou32(buf, 10, &pause_hi_ms);
+	if (rc)
+		return rc;
+
+	if (led->pwm_setting.max_pattern_length < 1)
+		return -EPERM;
+
+	cancel_work_sync(&led_cdev->set_brightness_work);
+
+	mutex_lock(&led->lock);
+
+	if (led->led_setting.breath_pattern.pause_hi_ms == pause_hi_ms)
+		goto unlock;
+
+	led->led_setting.breath_pattern.pause_hi_ms = pause_hi_ms;
+	led->pwm_setting.changed = true;
+
+	if (!led->led_setting.breath)
+		goto unlock;
+
+	led->led_setting.brightness = led->cdev.brightness;
+	rc = qpnp_tri_led_set(led);
+	if (rc < 0)
+		dev_err(led->chip->dev, "Set led failed for %s, rc=%d\n",
+				led->label, rc);
+
+unlock:
+	mutex_unlock(&led->lock);
+	return (rc < 0) ? rc : count;
+}
+
+static DEVICE_ATTR(pause_hi, 0644, pause_hi_show,
+					pause_hi_store);
+
+static ssize_t pause_lo_show(struct device *dev, struct device_attribute *attr,
+							char *buf)
+{
+	struct led_classdev *led_cdev = dev_get_drvdata(dev);
+	struct qpnp_led_dev *led =
+		container_of(led_cdev, struct qpnp_led_dev, cdev);
+
+	return snprintf(buf, PAGE_SIZE, "%d\n", led->led_setting.breath_pattern.pause_lo_ms);
+}
+
+static ssize_t pause_lo_store(struct device *dev,
+					struct device_attribute *attr,
+					const char *buf, size_t count)
+{
+	int rc;
+	u32 pause_lo_ms;
+	struct led_classdev *led_cdev = dev_get_drvdata(dev);
+	struct qpnp_led_dev *led =
+		container_of(led_cdev, struct qpnp_led_dev, cdev);
+
+	rc = kstrtou32(buf, 10, &pause_lo_ms);
+	if (rc)
+		return rc;
+
+	if (led->pwm_setting.max_pattern_length < 1)
+		return -EPERM;
+
+	cancel_work_sync(&led_cdev->set_brightness_work);
+
+	mutex_lock(&led->lock);
+
+	if (led->led_setting.breath_pattern.pause_lo_ms == pause_lo_ms)
+		goto unlock;
+
+	led->led_setting.breath_pattern.pause_lo_ms = pause_lo_ms;
+	led->pwm_setting.changed = true;
+
+	if (!led->led_setting.breath)
+		goto unlock;
+
+	led->led_setting.brightness = led->cdev.brightness;
+	rc = qpnp_tri_led_set(led);
+	if (rc < 0)
+		dev_err(led->chip->dev, "Set led failed for %s, rc=%d\n",
+				led->label, rc);
+
+unlock:
+	mutex_unlock(&led->lock);
+	return (rc < 0) ? rc : count;
+}
+
+static DEVICE_ATTR(pause_lo, 0644, pause_lo_show,
+					pause_lo_store);
+
+static ssize_t ramp_step_ms_show(struct device *dev, struct device_attribute *attr,
+							char *buf)
+{
+	struct led_classdev *led_cdev = dev_get_drvdata(dev);
+	struct qpnp_led_dev *led =
+		container_of(led_cdev, struct qpnp_led_dev, cdev);
+
+	return snprintf(buf, PAGE_SIZE, "%d\n", led->led_setting.breath_pattern.ramp_step_ms);
+}
+
+static ssize_t ramp_step_ms_store(struct device *dev,
+					struct device_attribute *attr,
+					const char *buf, size_t count)
+{
+	int rc;
+	u32 ramp_step_ms;
+	struct led_classdev *led_cdev = dev_get_drvdata(dev);
+	struct qpnp_led_dev *led =
+		container_of(led_cdev, struct qpnp_led_dev, cdev);
+
+	rc = kstrtou32(buf, 10, &ramp_step_ms);
+	if (rc)
+		return rc;
+
+	if (led->pwm_setting.max_pattern_length < 1)
+		return -EPERM;
+
+	cancel_work_sync(&led_cdev->set_brightness_work);
+
+	mutex_lock(&led->lock);
+
+	if (led->led_setting.breath_pattern.ramp_step_ms == ramp_step_ms)
+		goto unlock;
+
+	led->led_setting.breath_pattern.ramp_step_ms = ramp_step_ms;
+	led->pwm_setting.changed = true;
+
+	if (!led->led_setting.breath)
+		goto unlock;
+
+	led->led_setting.brightness = led->cdev.brightness;
+	rc = qpnp_tri_led_set(led);
+	if (rc < 0)
+		dev_err(led->chip->dev, "Set led failed for %s, rc=%d\n",
+				led->label, rc);
+
+unlock:
+	mutex_unlock(&led->lock);
+	return (rc < 0) ? rc : count;
+}
+
+static DEVICE_ATTR(ramp_step_ms, 0644, ramp_step_ms_show,
+					ramp_step_ms_store);
+
 static const struct attribute *breath_attrs[] = {
 	&dev_attr_breath.attr,
+	&dev_attr_pause_hi.attr,
+	&dev_attr_pause_lo.attr,
+	&dev_attr_ramp_step_ms.attr,
 	NULL
 };
 
@@ -468,6 +719,147 @@ static int qpnp_tri_led_hw_init(struct qpnp_tri_led_chip *chip)
 	chip->subtype = val;
 
 	return 0;
+}
+
+static int qpnp_tri_led_parse_pwm_dt(struct qpnp_led_dev *led, struct device_node *np)
+{
+	struct of_phandle_args args;
+	struct device_node *pwm_dev_node = NULL;
+	struct pwm_setting *pwm = &led->pwm_setting;
+	struct qpnp_tri_led_chip *chip = led->chip;
+	int index;
+	int cur_index = 0;
+	int rc;
+	bool found = false;
+	int low_idx, high_idx;
+
+	pwm->max_pattern_length = 0;
+	pwm->ramp_step_ms = RAMP_STEP_DEFAULT_MS;
+
+	rc = of_parse_phandle_with_args(np, "pwms", "#pwm-cells", 0,
+					 &args);
+	if (rc) {
+		dev_err(chip->dev, "Can't parse \"pwms\" property\n");
+		return rc;
+	}
+
+	if (chip->lut_pattern_length <= 0) {
+		rc = of_property_count_elems_of_size(args.np,
+						"qcom,lut-patterns",
+						sizeof(u32));
+		if (rc < 0) {
+			dev_warn(chip->dev,
+				"Read lut-patterns size failed, rc=%d\n", rc);
+			rc = 0;
+		}
+		chip->lut_pattern_length = rc;
+
+		if (chip->lut_pattern_length > 0) {
+			chip->lut_patterns = devm_kcalloc(chip->dev,
+						chip->lut_pattern_length,
+						sizeof(*chip->lut_patterns),
+						GFP_KERNEL);
+			if (!chip->lut_patterns) {
+				chip->lut_pattern_length = 0;
+			} else {
+				rc = of_property_read_u32_array(
+						args.np,
+						"qcom,lut-patterns",
+						chip->lut_patterns,
+						chip->lut_pattern_length);
+				if (rc < 0) {
+					dev_err(chip->dev,
+						"Readout lut-patterns failed,"
+						" rc=%d\n", rc);
+					devm_kfree(chip->dev,
+						chip->lut_patterns);
+					chip->lut_patterns = NULL;
+					chip->lut_pattern_length = 0;
+					rc = 0;
+				}
+			}
+		} else {
+			chip->lut_patterns = NULL;
+			chip->lut_pattern_length = 0;
+		}
+	}
+
+	index = args.args[0];
+	for_each_available_child_of_node(args.np, pwm_dev_node) {
+		if (index != cur_index)
+			cur_index++;
+		else {
+			found = true;
+			break;
+		}
+	}
+	if (!found) {
+		dev_err(chip->dev, "Can't find pwm%d entry\n", index);
+		rc = -ENODEV;
+		goto put;
+	}
+
+	rc = of_property_read_u32(pwm_dev_node, "qcom,ramp-step-ms",
+					&pwm->ramp_step_ms);
+	if (rc) {
+		dev_err(chip->dev,
+			"Get ramp-step-ms failed for pwm%d, rc=%d\n",
+			index, rc);
+	}
+
+	rc = of_property_read_u32(pwm_dev_node, "qcom,ramp-low-index",
+					&low_idx);
+	if (rc < 0) {
+		dev_err(chip->dev,
+			"Get ramp-low-index failed for pwm%d, rc=%d\n",
+			index, rc);
+		goto put;
+	}
+
+	rc = of_property_read_u32(pwm_dev_node, "qcom,ramp-high-index",
+					&high_idx);
+	if (rc < 0) {
+		dev_err(chip->dev,
+			"Get ramp-high-index failed for pwm%d, rc=%d\n",
+			index, rc);
+		goto put;
+	}
+
+	if (low_idx < 0 || low_idx >= high_idx) {
+		dev_err(chip->dev,
+			"Invalid pwm%d low_idx(%d), high_idx(%d)\n",
+			index, low_idx, high_idx);
+		rc = -EINVAL;
+		goto put;
+	}
+
+	pwm->max_pattern_length = high_idx - low_idx + 1;
+	pwm->max_pattern_length =
+		min(pwm->max_pattern_length, chip->lut_pattern_length);
+	dev_info(chip->dev, "Get pwm%d pattern:low_idx(%d),high_idx(%d),"
+			"length=%d\n", index, low_idx, high_idx,
+			pwm->max_pattern_length);
+
+	pwm->output_pattern = NULL;
+	pwm->duty_pattern_percentages = NULL;
+	if (pwm->max_pattern_length > 0) {
+		pwm->duty_pattern_percentages = devm_kcalloc(chip->dev,
+					pwm->max_pattern_length,
+					sizeof(*pwm->duty_pattern_percentages),
+					GFP_KERNEL);
+		if (!pwm->duty_pattern_percentages)
+			pwm->max_pattern_length = 0;
+	}
+
+	led->led_setting.breath_pattern.ramp_step_ms = pwm->ramp_step_ms;
+	led->led_setting.breath_pattern.pause_lo_ms = pwm->max_pattern_length * pwm->ramp_step_ms * 5 / 2;
+
+	pwm->changed = true;
+
+put:
+	of_node_put(args.np);
+
+	return rc;
 }
 
 static int qpnp_tri_led_parse_dt(struct qpnp_tri_led_chip *chip)
@@ -555,6 +947,8 @@ static int qpnp_tri_led_parse_dt(struct qpnp_tri_led_chip *chip)
 
 		led->default_trigger = of_get_property(child_node,
 				"linux,default-trigger", NULL);
+
+		qpnp_tri_led_parse_pwm_dt(led, child_node);
 	}
 
 	return rc;

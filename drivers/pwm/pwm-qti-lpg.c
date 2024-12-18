@@ -1166,15 +1166,11 @@ static int qpnp_lpg_pwm_set_output_pattern(struct pwm_chip *pwm_chip,
 
 	period_ns = pwm_get_period_extend(pwm);
 	for (i = 0; i < output_pattern->num_entries; i++) {
-		duty_ns = output_pattern->duty_pattern[i];
-		if (duty_ns > period_ns) {
-			dev_err(lpg->chip->dev, "duty %lluns is larger than period %lluns\n",
-					duty_ns, period_ns);
-			goto err;
+		percentages[i] = output_pattern->duty_pattern_percentages[i];
+		if (percentages[i] > 100) {
+			dev_err(lpg->chip->dev, "percentage %u%% is larger than 100%%\n", percentages[i]);
+			percentages[i] = 100;
 		}
-		/* Translate the pattern in duty_ns to percentage */
-		tmp = (u64)duty_ns * 100;
-		percentages[i] = (u32)div64_u64(tmp, period_ns);
 	}
 
 	rc = qpnp_lpg_set_lut_pattern(lpg, percentages,
@@ -1186,14 +1182,17 @@ static int qpnp_lpg_pwm_set_output_pattern(struct pwm_chip *pwm_chip,
 	}
 
 	lpg->lut_written = true;
+	lpg->ramp_config.pause_hi_count = output_pattern->pause_hi_count;
+	lpg->ramp_config.pause_lo_count = output_pattern->pause_lo_count;
+	lpg->ramp_config.ramp_dir_low_to_hi = output_pattern->ramp_dir_low_to_hi;
+	lpg->ramp_config.pattern_repeat = output_pattern->pattern_repeat;
+	lpg->ramp_config.toggle = output_pattern->toggle;
 	memcpy(lpg->ramp_config.pattern, percentages,
 			output_pattern->num_entries);
 	lpg->ramp_config.hi_idx = lpg->ramp_config.lo_idx +
 				output_pattern->num_entries - 1;
 
-	tmp = (u64)output_pattern->cycles_per_duty * period_ns;
-	do_div(tmp, NSEC_PER_MSEC);
-	lpg->ramp_config.step_ms = (u16)tmp;
+	lpg->ramp_config.step_ms = output_pattern->step_ms;
 
 	rc = qpnp_lpg_set_ramp_config(lpg);
 	if (rc < 0)
