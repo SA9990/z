@@ -1183,114 +1183,88 @@ void	ZF7_SscDis( struct cam_ois_ctrl_t *ctrl )
 UINT_8	ZF7_TstActMov( struct cam_ois_ctrl_t *ctrl, UINT_8 UcDirSel )
 {
 	UINT_8	UcRsltSts = 0;
-	INT_32	SlMeasureParameterNum ;
-	INT_32	SlMeasureParameterA , SlMeasureParameterB ;
-	UnllnVal	StMeasValueA  , StMeasValueB ;
-	float		SfLimit , Sfzoom , Sflenz , Sfshift ;
-	UINT_32		UlLimit , Ulzoom , Ullenz , Ulshift , UlActChkLvl ;
-	UINT_8		i;
-	UINT_32		UlReturnVal;
+	INT_32	SlMeasureParameterNum;
+	INT_32	SlMeasureParameterA, SlMeasureParameterB;
+	UnllnVal	StMeasValueA, StMeasValueB;
+	UINT_32	UlLimit, UlZoom, UlLenz, UlShift, UlActChkLvl;
+	UINT_32	UlReturnVal;
+	INT_64	SlLimit, SlZoom, SlLenz, SlShift;
 
-	if( UcDirSel == 0x00 ) {							
-		onsemi_read_dword( ctrl, Gyro_Limiter_X 			, ( UINT_32 * )&UlLimit ) ;	
-		onsemi_read_dword( ctrl, GyroFilterTableX_gxzoom , ( UINT_32 * )&Ulzoom ) ;	
-		onsemi_read_dword( ctrl, GyroFilterTableX_gxlenz , ( UINT_32 * )&Ullenz ) ;	
-		onsemi_read_dword( ctrl, GyroFilterShiftX 		, ( UINT_32 * )&Ulshift ) ;	
+	if( UcDirSel == 0x00 ) {									
+		onsemi_read_dword( ctrl, Gyro_Limiter_X, (UINT_32*)&UlLimit );	
+		onsemi_read_dword( ctrl, GyroFilterTableX_gxzoom, (UINT_32*)&UlZoom );	
+		onsemi_read_dword( ctrl, GyroFilterTableX_gxlenz, (UINT_32*)&UlLenz );	
+		onsemi_read_dword( ctrl, GyroFilterShiftX, (UINT_32*)&UlShift );	
 	}else{
-		onsemi_read_dword( ctrl, Gyro_Limiter_Y 			, ( UINT_32 * )&UlLimit ) ;	
-		onsemi_read_dword( ctrl, GyroFilterTableY_gyzoom , ( UINT_32 * )&Ulzoom ) ;	
-		onsemi_read_dword( ctrl, GyroFilterTableY_gylenz , ( UINT_32 * )&Ullenz ) ;	
-		onsemi_read_dword( ctrl, GyroFilterShiftY 		, ( UINT_32 * )&Ulshift ) ;	
+		onsemi_read_dword( ctrl, Gyro_Limiter_Y, (UINT_32*)&UlLimit );	
+		onsemi_read_dword( ctrl, GyroFilterTableY_gyzoom, (UINT_32*)&UlZoom );	
+		onsemi_read_dword( ctrl, GyroFilterTableY_gylenz, (UINT_32*)&UlLenz );	
+		onsemi_read_dword( ctrl, GyroFilterShiftY, (UINT_32*)&UlShift );	
 	}
 
+	SlLimit = (INT_64)UlLimit;
+	SlZoom = (UlZoom == 0) ? 0 : ((INT_64)UlZoom * 1000 / 0x7FFFFFFF);
+	SlLenz = (UlLenz == 0) ? 0 : ((INT_64)UlLenz * 1000 / 0x7FFFFFFF);
+	SlShift = 1 << ((UlShift & 0x0000FF00) >> 8);
 
-	SfLimit = (float)UlLimit / (float)0x7FFFFFFF;
-	if( Ulzoom == 0){
-		Sfzoom = 0;
-	}else{
-		Sfzoom = (float)abs(Ulzoom) / (float)0x7FFFFFFF;
-	}
-	if( Ullenz == 0){
-		Sflenz = 0;
-	}else{
-		Sflenz = (float)Ullenz / (float)0x7FFFFFFF;
-	}
-	Ulshift = ( Ulshift & 0x0000FF00) >> 8 ;	
-	Sfshift = 1;
-	for( i = 0 ; i < Ulshift ; i++ ){
-		Sfshift *= 2;
-	}
-	UlActChkLvl = (UINT_32)( (float)0x7FFFFFFF * SfLimit * Sfzoom * Sflenz * Sfshift * ACT_MARGIN );
+	UlActChkLvl = (UINT_32)(((INT_64)0x7FFFFFFF * SlLimit * SlZoom * SlLenz * SlShift) >> 23);
 
-	SlMeasureParameterNum	=	ACT_CHK_NUM ;
+	SlMeasureParameterNum = ACT_CHK_NUM;
 
-	if( UcDirSel == 0x00 ) {								
-		SlMeasureParameterA		=	HALL_RAM_HXOFF1 ;		
-		SlMeasureParameterB		=	HallFilterD_HXDAZ1 ;	
-	} else if( UcDirSel == 0x01 ) {						
-		SlMeasureParameterA		=	HALL_RAM_HYOFF1 ;		
-		SlMeasureParameterB		=	HallFilterD_HYDAZ1 ;	
+	if( UcDirSel == 0x00 ) {									
+		SlMeasureParameterA = HALL_RAM_HXOFF1;		
+		SlMeasureParameterB = HallFilterD_HXDAZ1;	
+	} else {								
+		SlMeasureParameterA = HALL_RAM_HYOFF1;		
+		SlMeasureParameterB = HallFilterD_HYDAZ1;	
 	}
+
 	ZF7_SetSinWavGenInt(ctrl);
 	
-	onsemi_write_dword( ctrl, 0x02FC		,	ACT_CHK_FRQ ) ;		
-	onsemi_write_dword( ctrl, 0x0304		,	UlActChkLvl ) ;		
-	onsemi_write_dword( ctrl, 0x02F4		,	0x00000001 ) ;		
-	if( UcDirSel == 0x00 ) {
-		ZF7_SetTransDataAdr( ctrl, 0x030C	,	(UINT_32)HALL_RAM_HXOFF1 ) ;	
-	}else if( UcDirSel == 0x01 ){
-		ZF7_SetTransDataAdr( ctrl, 0x030C	,	(UINT_32)HALL_RAM_HYOFF1 ) ;	
-	}
-	onsemi_write_dword ( ctrl, 0x8388	, 0x03E452C7 ) ;
-	onsemi_write_dword ( ctrl, 0x8380	, 0x03E452C7 ) ;
-	onsemi_write_dword ( ctrl, 0x8384	, 0x78375A71 ) ;
+	onsemi_write_dword( ctrl, 0x02FC, ACT_CHK_FRQ );		
+	onsemi_write_dword( ctrl, 0x0304, UlActChkLvl );		
+	onsemi_write_dword( ctrl, 0x02F4, 0x00000001 );		
 
-	onsemi_write_dword ( ctrl, 0x8394	, 0x03E452C7 ) ;
-	onsemi_write_dword ( ctrl, 0x838C	, 0x03E452C7 ) ;
-	onsemi_write_dword ( ctrl, 0x8390	, 0x78375A71 ) ;
+	ZF7_SetTransDataAdr(ctrl, 0x030C, (UINT_32)(UcDirSel == 0x00 ? HALL_RAM_HXOFF1 : HALL_RAM_HYOFF1));
 
-	onsemi_write_dword ( ctrl, 0x83A0	, 0x03E452C7 ) ;
-	onsemi_write_dword ( ctrl, 0x8398	, 0x03E452C7 ) ;
-	onsemi_write_dword ( ctrl, 0x839C	, 0x78375A71 ) ;
+	onsemi_write_dword( ctrl, 0x8388, 0x03E452C7 );
+	onsemi_write_dword( ctrl, 0x8380, 0x03E452C7 );
+	onsemi_write_dword( ctrl, 0x8384, 0x78375A71 );
+	onsemi_write_dword( ctrl, 0x8394, 0x03E452C7 );
+	onsemi_write_dword( ctrl, 0x838C, 0x03E452C7 );
+	onsemi_write_dword( ctrl, 0x8390, 0x78375A71 );
+	onsemi_write_dword( ctrl, 0x83A0, 0x03E452C7 );
+	onsemi_write_dword( ctrl, 0x8398, 0x03E452C7 );
+	onsemi_write_dword( ctrl, 0x839C, 0x78375A71 );
+	onsemi_write_dword( ctrl, 0x83AC, 0x03E452C7 );
+	onsemi_write_dword( ctrl, 0x83A4, 0x03E452C7 );
+	onsemi_write_dword( ctrl, 0x83A8, 0x78375A71 );
 
-	onsemi_write_dword ( ctrl, 0x83AC	, 0x03E452C7 ) ;
-	onsemi_write_dword ( ctrl, 0x83A4	, 0x03E452C7 ) ;
-	onsemi_write_dword ( ctrl, 0x83A8	, 0x78375A71 ) ;
-
-	ZF7_MeasureStart( ctrl, SlMeasureParameterNum , SlMeasureParameterA , SlMeasureParameterB ) ;		
+	ZF7_MeasureStart(ctrl, SlMeasureParameterNum, SlMeasureParameterA, SlMeasureParameterB);		
+	ZF7_MeasureWait(ctrl);		
 	
-	ZF7_MeasureWait(ctrl) ;		
-	
-	onsemi_write_dword( ctrl, 0x02F4	,	0x00000000 ) ;	
-	
-	if( UcDirSel == 0x00 ) {
-		ZF7_SetTransDataAdr( ctrl, 0x030C	,	(UINT_32)0x00000000 ) ;
-		onsemi_write_dword( ctrl, HALL_RAM_HXOFF1		,	0x00000000 ) ;		
-	}else if( UcDirSel == 0x01 ){
-		ZF7_SetTransDataAdr( ctrl, 0x030C	,	(UINT_32)0x00000000 ) ;
-		onsemi_write_dword( ctrl, HALL_RAM_HYOFF1		,	0x00000000 ) ;		
-	}
-	onsemi_read_dword( ctrl, 0x0298 		, &StMeasValueA.StUllnVal.UlLowVal ) ;	
-	onsemi_read_dword( ctrl, 0x0298 + 4 	, &StMeasValueA.StUllnVal.UlHigVal ) ;
-	onsemi_read_dword( ctrl, 0x02C0 		, &StMeasValueB.StUllnVal.UlLowVal ) ;	
-	onsemi_read_dword( ctrl, 0x02C0 + 4	, &StMeasValueB.StUllnVal.UlHigVal ) ;
+	onsemi_write_dword( ctrl, 0x02F4, 0x00000000 );	
 
+	ZF7_SetTransDataAdr(ctrl, 0x030C, (UINT_32)0x00000000);
+	onsemi_write_dword( ctrl, (UcDirSel == 0x00 ? HALL_RAM_HXOFF1 : HALL_RAM_HYOFF1), 0x00000000 );		
 
-	UlReturnVal = (INT_32)((INT_64)StMeasValueA.UllnValue * 100 / (INT_64)StMeasValueB.UllnValue  ) ;
+	onsemi_read_dword( ctrl, 0x0298, &StMeasValueA.StUllnVal.UlLowVal );	
+	onsemi_read_dword( ctrl, 0x0298 + 4, &StMeasValueA.StUllnVal.UlHigVal );
+	onsemi_read_dword( ctrl, 0x02C0, &StMeasValueB.StUllnVal.UlLowVal );	
+	onsemi_read_dword( ctrl, 0x02C0 + 4, &StMeasValueB.StUllnVal.UlHigVal );
 
-
-	
-	UcRsltSts = EXE_END ;
-	if( UlReturnVal < ACT_THR ){
-		if ( !UcDirSel ) {				
-			UcRsltSts = EXE_HXMVER ;
-		}else{							
-			UcRsltSts = EXE_HYMVER ;
-		}
+	if (StMeasValueB.UllnValue != 0) {
+		UlReturnVal = (UINT_32)(((INT_64)StMeasValueA.UllnValue * 100) / (INT_64)StMeasValueB.UllnValue);
+	} else {
+		UlReturnVal = 0;
 	}
 
-	return( UcRsltSts ) ;
+	UcRsltSts = EXE_END;
+	if( UlReturnVal < ACT_THR ) {
+		UcRsltSts = (UcDirSel == 0x00) ? EXE_HXMVER : EXE_HYMVER;
+	}
 
+	return UcRsltSts;
 }
 UINT_8	ZF7_RunHea( struct cam_ois_ctrl_t *ctrl )
 {
