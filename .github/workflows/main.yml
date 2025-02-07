@@ -1,0 +1,122 @@
+name: Kernel Build
+
+on:
+ 
+  workflow_dispatch: # Allow manual triggers
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      # Step 1: Checkout Kernel Source
+      - name: Checkout Kernel Source
+        uses: actions/checkout@v4
+
+      # Step 2: Install Build Dependencies
+      - name: Install Build Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            git ccache automake flex lzop bison gperf build-essential \
+            zip curl zlib1g-dev g++-multilib libxml2-utils bzip2 \
+            libbz2-dev squashfs-tools pngcrush schedtool dpkg-dev \
+            liblz4-tool make optipng maven libssl-dev pwgen libswitch-perl \
+            policycoreutils minicom libxml-sax-base-perl libxml-simple-perl \
+            bc libc6-dev-i386 lib32ncurses5-dev libx11-dev lib32z-dev \
+            libgl1-mesa-dev xsltproc unzip device-tree-compiler \
+            python2 python3 aria2 zstd
+
+
+      # Step 3: Download Clang Toolchain
+      - name: Download Clang Toolchain
+        run: |
+          mkdir -p $GITHUB_WORKSPACE/toolchains/clang
+          aria2c https://sourceforge.net/projects/payload/files/clang-r547379.tar.gz
+          mkdir -p $GITHUB_WORKSPACE/toolchains/clang/clang
+
+          tar -xzf clang-r547379.tar.gz -C $GITHUB_WORKSPACE/toolchains/clang/clang
+
+      # Step 4: Configure and Build Kernel
+      - name: Configure and Build Kernel
+        run: |
+          export PATH=$GITHUB_WORKSPACE/toolchains/clang/clang/bin:$PATH
+
+          make distclean
+
+          # Load default kernel configuration
+          make -j$(nproc --all) \
+              CC=clang \
+              O=out \
+              ARCH=arm64 \
+              CLANG_TRIPLE=aarch64-linux-gnu- \
+              AR=llvm-ar \
+              HOSTCC=clang \
+              HOSTCXX=clang++ \
+              NM=llvm-nm \
+              LLVM_DIS=llvm-dis \
+              OBJCOPY=llvm-objcopy \
+              READELF=llvm-readelf \
+              OBJDUMP=llvm-objdump \
+              OBJSIZE=llvm-size \
+              STRIP=llvm-strip \
+              LLVM=1 \
+              LD=ld.lld \
+              LLVM_IAS=1 \
+              CROSS_COMPILE=$GITHUB_WORKSPACE/toolchains/clang/clang/bin/aarch64-linux-android- \
+              vendor/obiwan_defconfig
+
+          # Build the kernel
+          make -j$(nproc --all) \
+              CC=clang \
+              O=out \
+              ARCH=arm64 \
+              CLANG_TRIPLE=aarch64-linux-gnu- \
+              AR=llvm-ar \
+              HOSTCC=clang \
+              HOSTCXX=clang++ \
+              NM=llvm-nm \
+              LLVM_DIS=llvm-dis \
+              OBJCOPY=llvm-objcopy \
+              READELF=llvm-readelf \
+              OBJDUMP=llvm-objdump \
+              OBJSIZE=llvm-size \
+              STRIP=llvm-strip \
+              LLVM=1 \
+              LD=ld.lld \
+              LLVM_IAS=1 \
+              CROSS_COMPILE=$GITHUB_WORKSPACE/toolchains/clang/clang/bin/aarch64-linux-android-
+
+      # Step 5: Collect and Merge DTBs
+      - name: Collect and Merge DTBs
+        run: |
+          find out/ -name '*.dtb' -exec cat {} + > out/arch/arm64/boot/dtb
+
+      # Step 6: Upload Kernel Image
+      - name: Upload Kernel Image
+        uses: actions/upload-artifact@v4
+        with:
+          name: Kernel-Image
+          path: out/arch/arm64/boot/Image
+
+      # Step 7: Upload DTBs
+      - name: Upload DTBs
+        uses: actions/upload-artifact@v4
+        with:
+          name: DTBs
+          path: out/arch/arm64/boot/dtb
+      # step 8: Copy Kernel to AK3 zip
+      - name: Copy kernel to AK3 ZIP
+        run: |
+          git clone https://github.com/SA9990/AK3_obiwan.git
+          cp out/arch/arm64/boot/Image AK3_obiwan
+          cp out/arch/arm64/boot/dtb AK3_obiwan
+          find out/ -type f -name "*.ko" -exec cp {} AK3_obiwan/modules/system/lib/modules/ \;
+          find . -name "dtbo.img" -exec cp {} AK3_obiwan/ \;
+          cd AK3_obiwan
+          zip -r9 AK3_obiwan.zip * -x .git README.md *placeholder
+      # step 9: Upload Anykernel3 ZIP
+      - name: Upload Anykernel3
+        uses: actions/upload-artifact@v4
+        with:
+          name: AK3_obiwan
+          path: AK3_obiwan/AK3_obiwan.zip
