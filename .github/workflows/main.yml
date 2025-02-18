@@ -31,10 +31,10 @@ jobs:
       - name: Download Clang Toolchain
         run: |
           mkdir -p $GITHUB_WORKSPACE/toolchains/clang
-          aria2c https://sourceforge.net/projects/payload/files/clang-r547379.tar.gz
+          aria2c https://sourceforge.net/projects/payload/files/r547379.tar.gz
           mkdir -p $GITHUB_WORKSPACE/toolchains/clang/clang
 
-          tar -xzf clang-r547379.tar.gz -C $GITHUB_WORKSPACE/toolchains/clang/clang
+          tar -xzf r547379.tar.gz -C $GITHUB_WORKSPACE/toolchains/clang/clang
 
       # Step 4: Configure and Build Kernel
       - name: Configure and Build Kernel
