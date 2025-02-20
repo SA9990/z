@@ -1179,7 +1179,7 @@ void	ZF7_SscDis( struct cam_ois_ctrl_t *ctrl )
 		//ASUS_BSP Byron Add for Avoid Hang if cci crash ---
 	}
 }
-
+/*
 UINT_8	ZF7_TstActMov( struct cam_ois_ctrl_t *ctrl, UINT_8 UcDirSel )
 {
 	UINT_8	UcRsltSts = 0;
@@ -1291,13 +1291,13 @@ UINT_8	ZF7_TstActMov( struct cam_ois_ctrl_t *ctrl, UINT_8 UcDirSel )
 
 	return( UcRsltSts ) ;
 
-}
+}*/
 UINT_8	ZF7_RunHea( struct cam_ois_ctrl_t *ctrl )
 {
 	UINT_8 	UcRst ;
 	UcRst = EXE_END ;
-	UcRst |= ZF7_TstActMov( ctrl, 0x00 ) ;
-	UcRst |= ZF7_TstActMov( ctrl, 0x01 ) ;
+	//UcRst |= ZF7_TstActMov( ctrl, 0x00 ) ;
+	//UcRst |= ZF7_TstActMov( ctrl, 0x01 ) ;
 	
 	return( UcRst ) ;
 }		
