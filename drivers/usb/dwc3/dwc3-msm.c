@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/module.h>
@@ -39,6 +40,7 @@
 #include <linux/extcon.h>
 #include <linux/reset.h>
 #include <linux/clk/qcom.h>
+#include <linux/usb7002.h>
 
 #include "power.h"
 #include "core.h"
@@ -3631,6 +3633,7 @@ static ssize_t mode_store(struct device *dev, struct device_attribute *attr,
 {
 	struct dwc3_msm *mdwc = dev_get_drvdata(dev);
 
+<<<<<<< HEAD
 	if (setModefromPOGO) {
 		if(pre_gDongleType==gDongleType) {
 			dev_info(mdwc->dev, "[USB] gDongleType no change (%d), do nothing\n", gDongleType);
