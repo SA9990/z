@@ -3633,7 +3633,6 @@ static ssize_t mode_store(struct device *dev, struct device_attribute *attr,
 {
 	struct dwc3_msm *mdwc = dev_get_drvdata(dev);
 
-<<<<<<< HEAD
 	if (setModefromPOGO) {
 		if(pre_gDongleType==gDongleType) {
 			dev_info(mdwc->dev, "[USB] gDongleType no change (%d), do nothing\n", gDongleType);
