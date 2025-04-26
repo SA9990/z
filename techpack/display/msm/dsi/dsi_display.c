@@ -5662,11 +5662,6 @@ int dsi_display_asus_dfps(struct dsi_display *display, int type)
 		return -EINVAL;
 	}
 
-	if (type == 4 && g_display->panel->asus_global_hbm_mode == 1) {
-		printk("[Display] skip fps 160 due to GHBM\n");
-		return rc;
-	}
-
 	mutex_lock(&display->display_lock);
 
 	rc = dsi_panel_asus_switch_fps(display->panel, type);
@@ -5907,6 +5902,8 @@ void asus_display_set_global_hbm(int mode)
 	if (mode == 0){
 		printk("[Display] global hbm off, reset hbm mode\n");
 		dsi_panel_set_hbm(g_display->panel, g_display->panel->asus_hbm_mode);
+		if (asus_current_fps == 160)
+			asus_display_apply_fps_setting();
 	}
 }
 
