@@ -39,46 +39,42 @@
 /***************************************/
 /* Proximity read/write Calibration File*/
 /**************************************/
-int psensor_factory_read_high(const char *str)
+int psensor_factory_read_high(const char *str, struct device *dev)
 {
-	struct file *fp = NULL;
-	mm_segment_t old_fs;
-	loff_t pos_lsts = 0;
-	char buf[8];
+	const struct firmware *fw;
 	int cal_val = 0;
-	int readlen = 0;	
-	
-	fp = filp_open(str, O_RDONLY, S_IRWXU | S_IRWXG | S_IRWXO);
-	if (IS_ERR_OR_NULL(fp)) {
-		err("Proximity read High Calibration open (%s) fail\n", str);
-		return -ENOENT;	/*No such file or directory*/
+	int ret = 0;
+	char buf[8] = {0};
+	size_t readlen = 0;
+
+	if (!str || !dev) {
+		pr_err("Proximity read High Calibration: invalid arguments\n");
+		return -EINVAL;
 	}
 
-	/*For purpose that can use read/write system call*/
-	old_fs = get_fs();
-	set_fs(KERNEL_DS);
+	ret = request_firmware(&fw, str, dev);
+	if (ret) {
+		pr_err("Proximity read High Calibration: failed to request firmware %s (%d)\n", str, ret);
+		return ret;
+	}
 
-	if (fp->f_op != NULL) {
-		pos_lsts = 0;
-		readlen = vfs_read(fp, buf, 6, &pos_lsts);
-		buf[readlen] = '\0';		
+	readlen = min_t(size_t, fw->size, sizeof(buf) - 1);
+	memcpy(buf, fw->data, readlen);
+	buf[readlen] = '\0';
+
+	ret = kstrtoint(buf, 10, &cal_val);
+	if (ret) {
+		pr_err("Proximity read High Calibration: invalid content format in %s\n", str);
+		cal_val = -EINVAL;
+	} else if (cal_val < 0) {
+		pr_err("Proximity read High Calibration: invalid value (%d)\n", cal_val);
+		cal_val = -EINVAL;
 	} else {
-		err("Proximity read High Calibration strlen: f_op=NULL or op->read=NULL\n");
-		set_fs(old_fs);
-		filp_close(fp, NULL);
-		return -ENXIO;	/*No such device or address*/
+		pr_info("Proximity read High Calibration: %d\n", cal_val);
 	}
-	set_fs(old_fs);
-	filp_close(fp, NULL);
 
-	sscanf(buf, "%d", &cal_val);
-	if(cal_val < 0) {
-		err("Proximity read High Calibration is FAIL. (%d)\n", cal_val);
-		return -EINVAL;	/*Invalid argument*/
-	} else {
-		dbg("Proximity read High Calibration : %d\n", cal_val);
-	}
-	
+	release_firmware(fw);
+
 	return cal_val;
 }
 EXPORT_SYMBOL(psensor_factory_read_high);
@@ -120,46 +116,42 @@ bool psensor_factory_write_high(int calvalue, const char *str)
 }
 EXPORT_SYMBOL(psensor_factory_write_high);
 
-int psensor_factory_read_low(const char *str)
+int psensor_factory_read_low(const char *str, struct device *dev)
 {
-	struct file *fp = NULL;
-	mm_segment_t old_fs;
-	loff_t pos_lsts = 0;
-	char buf[8];
+	const struct firmware *fw;
 	int cal_val = 0;
-	int readlen = 0;	
-	
-	fp = filp_open(str, O_RDONLY, S_IRWXU | S_IRWXG | S_IRWXO);
-	if (IS_ERR_OR_NULL(fp)) {
-		err("Proximity read Low Calibration open (%s) fail\n", str);
-		return -ENOENT;	/*No such file or directory*/
+	int ret = 0;
+	char buf[8] = {0};
+	size_t readlen = 0;
+
+	if (!str || !dev) {
+		pr_err("Proximity read Low Calibration: invalid arguments\n");
+		return -EINVAL;
 	}
 
-	/*For purpose that can use read/write system call*/
-	old_fs = get_fs();
-	set_fs(KERNEL_DS);
-
-	if (fp->f_op != NULL) {
-		pos_lsts = 0;
-		readlen = vfs_read(fp, buf, 6, &pos_lsts);
-		buf[readlen] = '\0';		
-	} else {
-		err("Proximity read Low Calibration strlen f_op=NULL or op->read=NULL\n");
-		set_fs(old_fs);
-		filp_close(fp, NULL);
-		return -ENXIO;	/*No such device or address*/
+	ret = request_firmware(&fw, str, dev);
+	if (ret) {
+		pr_err("Proximity read Low Calibration: failed to request firmware %s (%d)\n", str, ret);
+		return ret;
 	}
-	set_fs(old_fs);
-	filp_close(fp, NULL);
 
-	sscanf(buf, "%d", &cal_val);	
-	if(cal_val < 0) {
-		err("Proximity read Low Calibration is FAIL. (%d)\n", cal_val);
-		return -EINVAL;	/*Invalid argument*/
+	readlen = min_t(size_t, fw->size, sizeof(buf) - 1);
+	memcpy(buf, fw->data, readlen);
+	buf[readlen] = '\0';
+
+	ret = kstrtoint(buf, 10, &cal_val);
+	if (ret) {
+		pr_err("Proximity read Low Calibration: invalid content format in %s\n", str);
+		cal_val = -EINVAL;
+	} else if (cal_val < 0) {
+		pr_err("Proximity read Low Calibration: invalid value (%d)\n", cal_val);
+		cal_val = -EINVAL;
 	} else {
-		dbg("Proximity read Low Calibration : %d\n", cal_val);
-	}	
-	
+		pr_info("Proximity read Low Calibration: %d\n", cal_val);
+	}
+
+	release_firmware(fw);
+
 	return cal_val;
 }
 EXPORT_SYMBOL(psensor_factory_read_low);
@@ -205,46 +197,42 @@ EXPORT_SYMBOL(psensor_factory_write_low);
 /********************************/
 /* Proximity Inf calibration*/
 /*******************************/
-int psensor_factory_read_inf(const char *str)
+int psensor_factory_read_inf(const char *str, struct device *dev)
 {
-	struct file *fp = NULL;
-	mm_segment_t old_fs;
-	loff_t pos_lsts = 0;
-	char buf[8];
+	const struct firmware *fw;
 	int cal_val = 0;
-	int readlen = 0;	
-	
-	fp = filp_open(str, O_RDONLY, S_IRWXU | S_IRWXG | S_IRWXO);
-	if (IS_ERR_OR_NULL(fp)) {
-		err("Proximity read INF Calibration open (%s) fail\n", str);
-		return -ENOENT;	/*No such file or directory*/
+	int ret = 0;
+	char buf[8] = {0};
+	size_t readlen = 0;
+
+	if (!str || !dev) {
+		pr_err("Proximity read INF Calibration: invalid arguments\n");
+		return -EINVAL;
 	}
 
-	/*For purpose that can use read/write system call*/
-	old_fs = get_fs();
-	set_fs(KERNEL_DS);
+	ret = request_firmware(&fw, str, dev);
+	if (ret) {
+		pr_err("Proximity read INF Calibration: failed to request firmware %s (%d)\n", str, ret);
+		return ret;
+	}
 
-	if (fp->f_op != NULL) {
-		pos_lsts = 0;
-		readlen = vfs_read(fp, buf, 6, &pos_lsts);
-		buf[readlen] = '\0';		
+	readlen = min_t(size_t, fw->size, sizeof(buf) - 1);
+	memcpy(buf, fw->data, readlen);
+	buf[readlen] = '\0';
+
+	ret = kstrtoint(buf, 10, &cal_val);
+	if (ret) {
+		pr_err("Proximity read INF Calibration: invalid content format in %s\n", str);
+		cal_val = -EINVAL;
+	} else if (cal_val < 0) {
+		pr_err("Proximity read INF Calibration: invalid value (%d)\n", cal_val);
+		cal_val = -EINVAL;
 	} else {
-		err("Proximity read INF Calibration strlen: f_op=NULL or op->read=NULL\n");
-		set_fs(old_fs);
-		filp_close(fp, NULL);
-		return -ENXIO;	/*No such device or address*/
+		pr_info("Proximity read INF Calibration: %d\n", cal_val);
 	}
-	set_fs(old_fs);
-	filp_close(fp, NULL);
 
-	sscanf(buf, "%d", &cal_val);
-	if(cal_val < 0) {
-		err("Proximity read INF Calibration is FAIL. (%d)\n", cal_val);
-		return -EINVAL;	/*Invalid argument*/
-	} else {
-		dbg("Proximity read INF Calibration : %d\n", cal_val);
-	}
-	
+	release_firmware(fw);
+
 	return cal_val;
 }
 EXPORT_SYMBOL(psensor_factory_read_inf);
@@ -287,46 +275,42 @@ bool psensor_factory_write_inf(int calvalue, const char *str)
 EXPORT_SYMBOL(psensor_factory_write_inf);
 
 /*For transition period from 3/5 to 2/4*/
-int psensor_factory_read_2cm(const char *str)
+int psensor_factory_read_2cm(const char *str, struct device *dev)
 {
-	struct file *fp = NULL;
-	mm_segment_t old_fs;
-	loff_t pos_lsts = 0;
-	char buf[8];
+	const struct firmware *fw;
 	int cal_val = 0;
-	int readlen = 0;	
-	
-	fp = filp_open(str, O_RDONLY, S_IRWXU | S_IRWXG | S_IRWXO);
-	if (IS_ERR_OR_NULL(fp)) {
-		err("Proximity read 2CM Calibration open (%s) fail\n", str);
-		return -ENOENT;	/*No such file or directory*/
+	int ret = 0;
+	char buf[8] = {0};
+	size_t readlen = 0;
+
+	if (!str || !dev) {
+		pr_err("Proximity read 2CM Calibration: invalid arguments\n");
+		return -EINVAL;
 	}
 
-	/*For purpose that can use read/write system call*/
-	old_fs = get_fs();
-	set_fs(KERNEL_DS);
+	ret = request_firmware(&fw, str, dev);
+	if (ret) {
+		pr_err("Proximity read 2CM Calibration: failed to request firmware %s (%d)\n", str, ret);
+		return ret;
+	}
 
-	if (fp->f_op != NULL) {
-		pos_lsts = 0;
-		readlen = vfs_read(fp, buf, 6, &pos_lsts);
-		buf[readlen] = '\0';		
+	readlen = min_t(size_t, fw->size, sizeof(buf) - 1);
+	memcpy(buf, fw->data, readlen);
+	buf[readlen] = '\0';
+
+	ret = kstrtoint(buf, 10, &cal_val);
+	if (ret) {
+		pr_err("Proximity read 2CM Calibration: invalid content format in %s\n", str);
+		cal_val = -EINVAL;
+	} else if (cal_val < 0) {
+		pr_err("Proximity read 2CM Calibration: invalid value (%d)\n", cal_val);
+		cal_val = -EINVAL;
 	} else {
-		err("Proximity read 2CM Calibration strlen: f_op=NULL or op->read=NULL\n");
-		set_fs(old_fs);
-		filp_close(fp, NULL);
-		return -ENXIO;	/*No such device or address*/
+		pr_info("Proximity read 2CM Calibration: %d\n", cal_val);
 	}
-	set_fs(old_fs);
-	filp_close(fp, NULL);
 
-	sscanf(buf, "%d", &cal_val);
-	if(cal_val < 0) {
-		err("Proximity read 2CM Calibration is FAIL. (%d)\n", cal_val);
-		return -EINVAL;	/*Invalid argument*/
-	} else {
-		dbg("Proximity read 2CM Calibration : %d\n", cal_val);
-	}
-	
+	release_firmware(fw);
+
 	return cal_val;
 }
 EXPORT_SYMBOL(psensor_factory_read_2cm);
@@ -368,46 +352,42 @@ bool psensor_factory_write_2cm(int calvalue, const char *str)
 }
 EXPORT_SYMBOL(psensor_factory_write_2cm);
 
-int psensor_factory_read_4cm(const char *str)
+int psensor_factory_read_4cm(const char *str, struct device *dev)
 {
-	struct file *fp = NULL;
-	mm_segment_t old_fs;
-	loff_t pos_lsts = 0;
-	char buf[8];
+	const struct firmware *fw;
 	int cal_val = 0;
-	int readlen = 0;	
-	
-	fp = filp_open(str, O_RDONLY, S_IRWXU | S_IRWXG | S_IRWXO);
-	if (IS_ERR_OR_NULL(fp)) {
-		err("Proximity read 4CM Calibration open (%s) fail\n", str);
-		return -ENOENT;	/*No such file or directory*/
+	int ret = 0;
+	char buf[8] = {0};
+	size_t readlen = 0;
+
+	if (!str || !dev) {
+		pr_err("Proximity read 4CM Calibration: invalid arguments\n");
+		return -EINVAL;
 	}
 
-	/*For purpose that can use read/write system call*/
-	old_fs = get_fs();
-	set_fs(KERNEL_DS);
+	ret = request_firmware(&fw, str, dev);
+	if (ret) {
+		pr_err("Proximity read 4CM Calibration: failed to request firmware %s (%d)\n", str, ret);
+		return ret;
+	}
 
-	if (fp->f_op != NULL) {
-		pos_lsts = 0;
-		readlen = vfs_read(fp, buf, 6, &pos_lsts);
-		buf[readlen] = '\0';		
+	readlen = min_t(size_t, fw->size, sizeof(buf) - 1);
+	memcpy(buf, fw->data, readlen);
+	buf[readlen] = '\0';
+
+	ret = kstrtoint(buf, 10, &cal_val);
+	if (ret) {
+		pr_err("Proximity read 4CM Calibration: invalid content format in %s\n", str);
+		cal_val = -EINVAL;
+	} else if (cal_val < 0) {
+		pr_err("Proximity read 4CM Calibration: invalid value (%d)\n", cal_val);
+		cal_val = -EINVAL;
 	} else {
-		err("Proximity read 4CM Calibration strlen: f_op=NULL or op->read=NULL\n");
-		set_fs(old_fs);
-		filp_close(fp, NULL);
-		return -ENXIO;	/*No such device or address*/
+		pr_info("Proximity read 4CM Calibration: %d\n", cal_val);
 	}
-	set_fs(old_fs);
-	filp_close(fp, NULL);
 
-	sscanf(buf, "%d", &cal_val);
-	if(cal_val < 0) {
-		err("Proximity read 4CM Calibration is FAIL. (%d)\n", cal_val);
-		return -EINVAL;	/*Invalid argument*/
-	} else {
-		dbg("Proximity read 4CM Calibration : %d\n", cal_val);
-	}
-	
+	release_firmware(fw);
+
 	return cal_val;
 }
 EXPORT_SYMBOL(psensor_factory_read_4cm);
@@ -449,46 +429,42 @@ bool psensor_factory_write_4cm(int calvalue, const char *str)
 }
 EXPORT_SYMBOL(psensor_factory_write_4cm);
 
-int psensor_factory_read_3cm(const char *str)
+int psensor_factory_read_3cm(const char *str, struct device *dev)
 {
-	struct file *fp = NULL;
-	mm_segment_t old_fs;
-	loff_t pos_lsts = 0;
-	char buf[8];
+	const struct firmware *fw;
 	int cal_val = 0;
-	int readlen = 0;	
-	
-	fp = filp_open(str, O_RDONLY, S_IRWXU | S_IRWXG | S_IRWXO);
-	if (IS_ERR_OR_NULL(fp)) {
-		err("Proximity read 3CM Calibration open (%s) fail\n", str);
-		return -ENOENT;	/*No such file or directory*/
+	int ret = 0;
+	char buf[8] = {0};
+	size_t readlen = 0;
+
+	if (!str || !dev) {
+		pr_err("Proximity read 3CM Calibration: invalid arguments\n");
+		return -EINVAL;
 	}
 
-	/*For purpose that can use read/write system call*/
-	old_fs = get_fs();
-	set_fs(KERNEL_DS);
+	ret = request_firmware(&fw, str, dev);
+	if (ret) {
+		pr_err("Proximity read 3CM Calibration: failed to request firmware %s (%d)\n", str, ret);
+		return ret;
+	}
 
-	if (fp->f_op != NULL) {
-		pos_lsts = 0;
-		readlen = vfs_read(fp, buf, 6, &pos_lsts);
-		buf[readlen] = '\0';		
+	readlen = min_t(size_t, fw->size, sizeof(buf) - 1);
+	memcpy(buf, fw->data, readlen);
+	buf[readlen] = '\0';
+
+	ret = kstrtoint(buf, 10, &cal_val);
+	if (ret) {
+		pr_err("Proximity read 3CM Calibration: invalid content format in %s\n", str);
+		cal_val = -EINVAL;
+	} else if (cal_val < 0) {
+		pr_err("Proximity read 3CM Calibration: invalid value (%d)\n", cal_val);
+		cal_val = -EINVAL;
 	} else {
-		err("Proximity read 3CM Calibration strlen: f_op=NULL or op->read=NULL\n");
-		set_fs(old_fs);
-		filp_close(fp, NULL);
-		return -ENXIO;	/*No such device or address*/
+		pr_info("Proximity read 3CM Calibration: %d\n", cal_val);
 	}
-	set_fs(old_fs);
-	filp_close(fp, NULL);
 
-	sscanf(buf, "%d", &cal_val);
-	if(cal_val < 0) {
-		err("Proximity read 3CM Calibration is FAIL. (%d)\n", cal_val);
-		return -EINVAL;	/*Invalid argument*/
-	} else {
-		dbg("Proximity read 3CM Calibration : %d\n", cal_val);
-	}
-	
+	release_firmware(fw);
+
 	return cal_val;
 }
 EXPORT_SYMBOL(psensor_factory_read_3cm);
@@ -530,46 +506,42 @@ bool psensor_factory_write_3cm(int calvalue, const char *str)
 }
 EXPORT_SYMBOL(psensor_factory_write_3cm);
 
-int psensor_factory_read_5cm(const char *str)
+int psensor_factory_read_5cm(const char *str, struct device *dev)
 {
-	struct file *fp = NULL;
-	mm_segment_t old_fs;
-	loff_t pos_lsts = 0;
-	char buf[8];
+	const struct firmware *fw;
 	int cal_val = 0;
-	int readlen = 0;	
-	
-	fp = filp_open(str, O_RDONLY, S_IRWXU | S_IRWXG | S_IRWXO);
-	if (IS_ERR_OR_NULL(fp)) {
-		err("Proximity read 5CM Calibration open (%s) fail\n", str);
-		return -ENOENT;	/*No such file or directory*/
+	int ret = 0;
+	char buf[8] = {0};
+	size_t readlen = 0;
+
+	if (!str || !dev) {
+		pr_err("Proximity read 5CM Calibration: invalid arguments\n");
+		return -EINVAL;
 	}
 
-	/*For purpose that can use read/write system call*/
-	old_fs = get_fs();
-	set_fs(KERNEL_DS);
+	ret = request_firmware(&fw, str, dev);
+	if (ret) {
+		pr_err("Proximity read 5CM Calibration: failed to request firmware %s (%d)\n", str, ret);
+		return ret;
+	}
 
-	if (fp->f_op != NULL) {
-		pos_lsts = 0;
-		readlen = vfs_read(fp, buf, 6, &pos_lsts);
-		buf[readlen] = '\0';		
+	readlen = min_t(size_t, fw->size, sizeof(buf) - 1);
+	memcpy(buf, fw->data, readlen);
+	buf[readlen] = '\0';
+
+	ret = kstrtoint(buf, 10, &cal_val);
+	if (ret) {
+		pr_err("Proximity read 5CM Calibration: invalid content format in %s\n", str);
+		cal_val = -EINVAL;
+	} else if (cal_val < 0) {
+		pr_err("Proximity read 5CM Calibration: invalid value (%d)\n", cal_val);
+		cal_val = -EINVAL;
 	} else {
-		err("Proximity read 5CM Calibration strlen: f_op=NULL or op->read=NULL\n");
-		set_fs(old_fs);
-		filp_close(fp, NULL);
-		return -ENXIO;	/*No such device or address*/
+		pr_info("Proximity read 5CM Calibration: %d\n", cal_val);
 	}
-	set_fs(old_fs);
-	filp_close(fp, NULL);
 
-	sscanf(buf, "%d", &cal_val);
-	if(cal_val < 0) {
-		err("Proximity read 5CM Calibration is FAIL. (%d)\n", cal_val);
-		return -EINVAL;	/*Invalid argument*/
-	} else {
-		dbg("Proximity read 5CM Calibration : %d\n", cal_val);
-	}
-	
+	release_firmware(fw);
+
 	return cal_val;
 }
 EXPORT_SYMBOL(psensor_factory_read_5cm);
@@ -611,46 +583,42 @@ bool psensor_factory_write_5cm(int calvalue, const char *str)
 }
 EXPORT_SYMBOL(psensor_factory_write_5cm);
 
-int psensor_factory_read_1cm(const char *str)
+int psensor_factory_read_1cm(const char *str, struct device *dev)
 {
-	struct file *fp = NULL;
-	mm_segment_t old_fs;
-	loff_t pos_lsts = 0;
-	char buf[8];
+	const struct firmware *fw;
 	int cal_val = 0;
-	int readlen = 0;	
-	
-	fp = filp_open(str, O_RDONLY, S_IRWXU | S_IRWXG | S_IRWXO);
-	if (IS_ERR_OR_NULL(fp)) {
-		err("Proximity read 1CM Calibration open (%s) fail\n", str);
-		return -ENOENT;	/*No such file or directory*/
+	int ret = 0;
+	char buf[8] = {0};
+	size_t readlen = 0;
+
+	if (!str || !dev) {
+		pr_err("Proximity read 1CM Calibration: invalid arguments\n");
+		return -EINVAL;
 	}
 
-	/*For purpose that can use read/write system call*/
-	old_fs = get_fs();
-	set_fs(KERNEL_DS);
+	ret = request_firmware(&fw, str, dev);
+	if (ret) {
+		pr_err("Proximity read 1CM Calibration: failed to request firmware %s (%d)\n", str, ret);
+		return ret;
+	}
 
-	if (fp->f_op != NULL) {
-		pos_lsts = 0;
-		readlen = vfs_read(fp, buf, 6, &pos_lsts);
-		buf[readlen] = '\0';		
+	readlen = min_t(size_t, fw->size, sizeof(buf) - 1);
+	memcpy(buf, fw->data, readlen);
+	buf[readlen] = '\0';
+
+	ret = kstrtoint(buf, 10, &cal_val);
+	if (ret) {
+		pr_err("Proximity read 1CM Calibration: invalid content format in %s\n", str);
+		cal_val = -EINVAL;
+	} else if (cal_val < 0) {
+		pr_err("Proximity read 1CM Calibration: invalid value (%d)\n", cal_val);
+		cal_val = -EINVAL;
 	} else {
-		err("Proximity read 1CM Calibration strlen: f_op=NULL or op->read=NULL\n");
-		set_fs(old_fs);
-		filp_close(fp, NULL);
-		return -ENXIO;	/*No such device or address*/
+		pr_info("Proximity read 1CM Calibration: %d\n", cal_val);
 	}
-	set_fs(old_fs);
-	filp_close(fp, NULL);
 
-	sscanf(buf, "%d", &cal_val);
-	if(cal_val < 0) {
-		err("Proximity read 1CM Calibration is FAIL. (%d)\n", cal_val);
-		return -EINVAL;	/*Invalid argument*/
-	} else {
-		dbg("Proximity read 1CM Calibration : %d\n", cal_val);
-	}
-	
+	release_firmware(fw);
+
 	return cal_val;
 }
 EXPORT_SYMBOL(psensor_factory_read_1cm);

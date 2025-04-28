@@ -448,13 +448,13 @@ static int proximity_set_threshold(void)
 	}
 	
 	/*Set Proximity High Threshold*/
-	ret = psensor_factory_read_high(PSENSOR_HI_CALIBRATION_FILE_2ND);
+	ret = psensor_factory_read_high(PSENSOR_HI_CALIBRATION_FILE_2ND, &g_i2c_client->dev);
 
 	/*For transition period from 3/5 to 2/4 +++*/
 	if(0 == g_ps_data->selection)
-		ret = psensor_factory_read_2cm(PSENSOR_2CM_CALIBRATION_FILE_2ND);
+		ret = psensor_factory_read_2cm(PSENSOR_2CM_CALIBRATION_FILE_2ND, &g_i2c_client->dev);
 	else if(1 == g_ps_data->selection)
-		ret = psensor_factory_read_3cm(PSENSOR_3CM_CALIBRATION_FILE_2ND);
+		ret = psensor_factory_read_3cm(PSENSOR_3CM_CALIBRATION_FILE_2ND, &g_i2c_client->dev);
 	else
 		err("2nd INVALID selection : %d\n", g_ps_data->selection);
 	/*For transition period from 3/5 to 2/4 ---*/
@@ -473,13 +473,13 @@ static int proximity_set_threshold(void)
 	}
 	
 	/*Set Proximity Low Threshold*/
-	ret = psensor_factory_read_low(PSENSOR_LOW_CALIBRATION_FILE_2ND);	
+	ret = psensor_factory_read_low(PSENSOR_LOW_CALIBRATION_FILE_2ND, &g_i2c_client->dev);	
 
 	/*For transition period from 3/5 to 2/4 +++*/
 	if(0 == g_ps_data->selection)
-		ret = psensor_factory_read_4cm(PSENSOR_4CM_CALIBRATION_FILE_2ND);
+		ret = psensor_factory_read_4cm(PSENSOR_4CM_CALIBRATION_FILE_2ND, &g_i2c_client->dev);
 	else if(1 == g_ps_data->selection)
-		ret = psensor_factory_read_5cm(PSENSOR_5CM_CALIBRATION_FILE_2ND);
+		ret = psensor_factory_read_5cm(PSENSOR_5CM_CALIBRATION_FILE_2ND, &g_i2c_client->dev);
 	else
 		err("INVALID selection : %d\n", g_ps_data->selection);
 	/*For transition period from 3/5 to 2/4 ---*/
@@ -508,7 +508,7 @@ static int proximity_set_threshold(void)
 		return -ENOENT;
 	}
 	
-	ret = psensor_factory_read_1cm(PSENSOR_1CM_CALIBRATION_FILE_2ND);
+	ret = psensor_factory_read_1cm(PSENSOR_1CM_CALIBRATION_FILE_2ND, &g_i2c_client->dev);
 	if(ret > 0){
 		g_pocket_mode_threshold = ret;
 		log("2nd Proximity read Pocket Mode Calibration : %d\n", g_pocket_mode_threshold);
@@ -734,12 +734,12 @@ static int light_get_accuracy_gain(void)
 	int gainvalue = 0;
 
 	/* Light Sensor Read Calibration*/
-	cal = lsensor_factory_read(LSENSOR_CALIBRATION_FILE_2ND);
+	cal = lsensor_factory_read(LSENSOR_CALIBRATION_FILE_2ND, &g_i2c_client->dev);
 	
 	if(0 == g_als_data->selection)
-		cal = lsensor_factory_read_50ms(LSENSOR_50MS_CALIBRATION_FILE_2ND);
+		cal = lsensor_factory_read_50ms(LSENSOR_50MS_CALIBRATION_FILE_2ND, &g_i2c_client->dev);
 	else if(1 == g_als_data->selection)
-		cal = lsensor_factory_read_100ms(LSENSOR_100MS_CALIBRATION_FILE_2ND);
+		cal = lsensor_factory_read_100ms(LSENSOR_100MS_CALIBRATION_FILE_2ND, &g_i2c_client->dev);
 	else
 		err("2nd INVALID selection : %d\n", g_als_data->selection);
 	
@@ -805,13 +805,13 @@ static int mproximity_show_calibration_hi(void)
 	int calvalue;
 	int ret = 0;	
 
-	calvalue = psensor_factory_read_high(PSENSOR_HI_CALIBRATION_FILE_2ND);
+	calvalue = psensor_factory_read_high(PSENSOR_HI_CALIBRATION_FILE_2ND, &g_i2c_client->dev);
 
 	/*For transition period from 3/5 to 2/4 +++*/
 	if(0 == g_ps_data->selection)
-		calvalue = psensor_factory_read_2cm(PSENSOR_2CM_CALIBRATION_FILE_2ND);
+		calvalue = psensor_factory_read_2cm(PSENSOR_2CM_CALIBRATION_FILE_2ND, &g_i2c_client->dev);
 	else if(1 == g_ps_data->selection)
-		calvalue = psensor_factory_read_3cm(PSENSOR_3CM_CALIBRATION_FILE_2ND);
+		calvalue = psensor_factory_read_3cm(PSENSOR_3CM_CALIBRATION_FILE_2ND, &g_i2c_client->dev);
 	else
 		err("2nd INVALID selection : %d\n", g_ps_data->selection);
 	/*For transition period from 3/5 to 2/4 ---*/
@@ -835,13 +835,13 @@ static int mproximity_store_calibration_hi(int calvalue)
 		return -EINVAL;	
 	}
 	log("2nd Proximity store High Calibration: %d\n", calvalue);
-	psensor_factory_write_high(calvalue, PSENSOR_HI_CALIBRATION_FILE_2ND);
+	psensor_factory_write_high(calvalue, CALIBRATION_FILE_DIR PSENSOR_HI_CALIBRATION_FILE_2ND);
 	
 	/*For transition period from 3/5 to 2/4 +++*/
 	if(0 == g_ps_data->selection)
-		psensor_factory_write_2cm(calvalue, PSENSOR_2CM_CALIBRATION_FILE_2ND);
+		psensor_factory_write_2cm(calvalue, CALIBRATION_FILE_DIR PSENSOR_2CM_CALIBRATION_FILE_2ND);
 	else if(1 == g_ps_data->selection)
-		psensor_factory_write_3cm(calvalue, PSENSOR_3CM_CALIBRATION_FILE_2ND);
+		psensor_factory_write_3cm(calvalue, CALIBRATION_FILE_DIR PSENSOR_3CM_CALIBRATION_FILE_2ND);
 	else
 		err("2nd INVALID selection : %d\n", g_ps_data->selection);
 	/*For transition period from 3/5 to 2/4 ---*/
@@ -856,13 +856,13 @@ static int mproximity_show_calibration_lo(void)
 	int calvalue;
 	int ret = 0;
 
-	calvalue = psensor_factory_read_low(PSENSOR_LOW_CALIBRATION_FILE_2ND);	
+	calvalue = psensor_factory_read_low(PSENSOR_LOW_CALIBRATION_FILE_2ND, &g_i2c_client->dev);	
 
 	/*For transition period from 3/5 to 2/4 +++*/
 	if(0 == g_ps_data->selection)
-		calvalue = psensor_factory_read_4cm(PSENSOR_4CM_CALIBRATION_FILE_2ND);
+		calvalue = psensor_factory_read_4cm(PSENSOR_4CM_CALIBRATION_FILE_2ND, &g_i2c_client->dev);
 	else if(1 == g_ps_data->selection)
-		calvalue = psensor_factory_read_5cm(PSENSOR_5CM_CALIBRATION_FILE_2ND);
+		calvalue = psensor_factory_read_5cm(PSENSOR_5CM_CALIBRATION_FILE_2ND, &g_i2c_client->dev);
 	else
 		err("2nd INVALID selection : %d\n", g_ps_data->selection);
 	/*For transition period from 3/5 to 2/4 ---*/
@@ -886,13 +886,13 @@ static int mproximity_store_calibration_lo(int calvalue)
 		return -EINVAL;
 	}
 	log("2nd Proximity store Low Calibration: %d\n", calvalue);
-	psensor_factory_write_low(calvalue, PSENSOR_LOW_CALIBRATION_FILE_2ND);
+	psensor_factory_write_low(calvalue, CALIBRATION_FILE_DIR PSENSOR_LOW_CALIBRATION_FILE_2ND);
 
 	/*For transition period from 3/5 to 2/4 +++*/
 	if(0 == g_ps_data->selection)
-		psensor_factory_write_4cm(calvalue, PSENSOR_4CM_CALIBRATION_FILE_2ND);
+		psensor_factory_write_4cm(calvalue, CALIBRATION_FILE_DIR PSENSOR_4CM_CALIBRATION_FILE_2ND);
 	else if(1 == g_ps_data->selection)
-		psensor_factory_write_5cm(calvalue, PSENSOR_5CM_CALIBRATION_FILE_2ND);
+		psensor_factory_write_5cm(calvalue, CALIBRATION_FILE_DIR PSENSOR_5CM_CALIBRATION_FILE_2ND);
 	else
 		err("2nd INVALID selection : %d\n", g_ps_data->selection);
 	/*For transition period from 3/5 to 2/4 ---*/
@@ -905,7 +905,7 @@ static int mproximity_store_calibration_lo(int calvalue)
 static int mproximity_show_calibration_inf(void)
 {
 	int calvalue;
-	calvalue = psensor_factory_read_inf(PSENSOR_INF_CALIBRATION_FILE_2ND);
+	calvalue = psensor_factory_read_inf(PSENSOR_INF_CALIBRATION_FILE_2ND, &g_i2c_client->dev);
 	dbg("2nd Proximity show Inf Calibration: %d\n", calvalue);
 	return calvalue;
 }
@@ -917,7 +917,7 @@ static int mproximity_store_calibration_inf(int calvalue)
 		return -EINVAL;
 	}
 	log("2nd Proximity store Inf Calibration: %d\n", calvalue);
-	psensor_factory_write_inf(calvalue, PSENSOR_INF_CALIBRATION_FILE_2ND);
+	psensor_factory_write_inf(calvalue, CALIBRATION_FILE_DIR PSENSOR_INF_CALIBRATION_FILE_2ND);
 	
 	return 0;
 }
@@ -964,12 +964,12 @@ static int mlight_show_calibration(void)
 	int calvalue;
 	int ret = 0;
 	
-	calvalue = lsensor_factory_read(LSENSOR_CALIBRATION_FILE_2ND);
+	calvalue = lsensor_factory_read(LSENSOR_CALIBRATION_FILE_2ND, &g_i2c_client->dev);
 
 	if(0 == g_als_data->selection)
-		calvalue = lsensor_factory_read_50ms(LSENSOR_50MS_CALIBRATION_FILE_2ND);
+		calvalue = lsensor_factory_read_50ms(LSENSOR_50MS_CALIBRATION_FILE_2ND, &g_i2c_client->dev);
 	else if(1 == g_als_data->selection)
-		calvalue = lsensor_factory_read_100ms(LSENSOR_100MS_CALIBRATION_FILE_2ND);
+		calvalue = lsensor_factory_read_100ms(LSENSOR_100MS_CALIBRATION_FILE_2ND, &g_i2c_client->dev);
 	else
 		err("2nd INVALID selection : %d\n", g_als_data->selection);
 	
@@ -988,12 +988,12 @@ static int mlight_store_calibration(int calvalue)
 		return -EINVAL;
 	}
 	log("2nd Light Sensor store Calibration: %d\n", calvalue);
-	lsensor_factory_write(calvalue, LSENSOR_CALIBRATION_FILE_2ND);
+	lsensor_factory_write(calvalue, CALIBRATION_FILE_DIR LSENSOR_CALIBRATION_FILE_2ND);
 
 	if(0 == g_als_data->selection)
-		lsensor_factory_write_50ms(calvalue, LSENSOR_50MS_CALIBRATION_FILE_2ND);
+		lsensor_factory_write_50ms(calvalue, CALIBRATION_FILE_DIR LSENSOR_50MS_CALIBRATION_FILE_2ND);
 	else if(1 == g_als_data->selection)
-		lsensor_factory_write_100ms(calvalue, LSENSOR_100MS_CALIBRATION_FILE_2ND);
+		lsensor_factory_write_100ms(calvalue, CALIBRATION_FILE_DIR LSENSOR_100MS_CALIBRATION_FILE_2ND);
 	else
 		err("2nd INVALID selection : %d\n", g_als_data->selection);
 	
@@ -1440,9 +1440,9 @@ static int mproximity_store_load_calibration_data()
 	
 	/*For transition period from 3/5 to 2/4 +++*/
 	if(0 == g_ps_data->selection)
-		ret = psensor_factory_read_2cm(PSENSOR_2CM_CALIBRATION_FILE_2ND);
+		ret = psensor_factory_read_2cm(PSENSOR_2CM_CALIBRATION_FILE_2ND, &g_i2c_client->dev);
 	else if(1 == g_ps_data->selection)
-		ret = psensor_factory_read_3cm(PSENSOR_3CM_CALIBRATION_FILE_2ND);
+		ret = psensor_factory_read_3cm(PSENSOR_3CM_CALIBRATION_FILE_2ND, &g_i2c_client->dev);
 	else
 		err("2nd INVALID selection : %d\n", g_ps_data->selection);
 	/*For transition period from 3/5 to 2/4 ---*/
@@ -1456,9 +1456,9 @@ static int mproximity_store_load_calibration_data()
 	
 	/*For transition period from 3/5 to 2/4 +++*/
 	if(0 == g_ps_data->selection)
-		ret = psensor_factory_read_4cm(PSENSOR_4CM_CALIBRATION_FILE_2ND);
+		ret = psensor_factory_read_4cm(PSENSOR_4CM_CALIBRATION_FILE_2ND, &g_i2c_client->dev);
 	else if(1 == g_ps_data->selection)
-		ret = psensor_factory_read_5cm(PSENSOR_5CM_CALIBRATION_FILE_2ND);
+		ret = psensor_factory_read_5cm(PSENSOR_5CM_CALIBRATION_FILE_2ND, &g_i2c_client->dev);
 	else
 		err("2nd INVALID selection : %d\n", g_ps_data->selection);
 	/*For transition period from 3/5 to 2/4 ---*/
@@ -1965,7 +1965,7 @@ static int proximity_check_minCT(void)
 	int round;
 	
 	/*check the crosstalk calibration value*/	
-	ret = psensor_factory_read_inf(PSENSOR_INF_CALIBRATION_FILE_2ND);	
+	ret = psensor_factory_read_inf(PSENSOR_INF_CALIBRATION_FILE_2ND, &g_i2c_client->dev);	
 	if(ret >= 0) {
 	    	g_ps_data->g_ps_calvalue_inf= ret;
 		log("2nd Proximity read INF Calibration : %d\n", g_ps_data->g_ps_calvalue_inf);

@@ -16,6 +16,7 @@
 #define __LINUX_ASH_H
 
 #include <linux/input/SAR.h>
+#include <linux/firmware.h>
 
 /**
  * ASH_type - define the sensor types ASH supports.
@@ -501,28 +502,36 @@ extern void HALLsensor_report_unregister(void);
 extern void hallsensor_report_lid(int lid);
 
 /**
+ * Define the dictionary for all calibration files.
+ * Keep it here only to retain factory_write functionality which is unused on
+ * non-stock ROMs.
+ * This should not be used anymore and should be removed in the future. 
+ */
+#define CALIBRATION_FILE_DIR			"/vendor/factory/"
+
+/**
  * Define the path of Light Sensor Calibration file.
  * @LSENSOR_200LUX_CALIBRATION_FILE : 200 Lux Calibration file.
  * @LSENSOR_1000LUX_CALIBRATION_FILE : 1000 Lux Calibration file.
  */
-#define LSENSOR_200LUX_CALIBRATION_FILE	"/vendor/factory/lsensor_200lux.nv"
-#define LSENSOR_1000LUX_CALIBRATION_FILE	"/vendor/factory/lsensor_1000lux.nv"
-#define LSENSOR_CALIBRATION_FILE			"/vendor/factory/lsensor.nv"
+#define LSENSOR_200LUX_CALIBRATION_FILE	"lsensor_200lux.nv"
+#define LSENSOR_1000LUX_CALIBRATION_FILE	"lsensor_1000lux.nv"
+#define LSENSOR_CALIBRATION_FILE			"lsensor.nv"
 
 
 /*For transition period from 100ms to 50ms +++*/
-#define LSENSOR_50MS_CALIBRATION_FILE		"/vendor/factory/lsensor_50ms.nv"
-#define LSENSOR_100MS_CALIBRATION_FILE		"/vendor/factory/lsensor_100ms.nv"
-#define LSENSOR_200MS_CALIBRATION_FILE		"/vendor/factory/lsensor_200ms.nv"
-#define LSENSOR_400MS_CALIBRATION_FILE		"/vendor/factory/lsensor_400ms.nv"
+#define LSENSOR_50MS_CALIBRATION_FILE		"lsensor_50ms.nv"
+#define LSENSOR_100MS_CALIBRATION_FILE		"lsensor_100ms.nv"
+#define LSENSOR_200MS_CALIBRATION_FILE		"lsensor_200ms.nv"
+#define LSENSOR_400MS_CALIBRATION_FILE		"lsensor_400ms.nv"
 /*For transition period from 100ms to 50ms ---*/
 
 
-#define LSENSOR_200LUX_CALIBRATION_FILE_2ND	"/vendor/factory/lsensor_2nd_200lux.nv"
-#define LSENSOR_1000LUX_CALIBRATION_FILE_2ND	"/vendor/factory/lsensor_2nd_1000lux.nv"
-#define LSENSOR_CALIBRATION_FILE_2ND			"/vendor/factory/lsensor_2nd.nv"
-#define LSENSOR_50MS_CALIBRATION_FILE_2ND		"/vendor/factory/lsensor_2nd_50ms.nv"
-#define LSENSOR_100MS_CALIBRATION_FILE_2ND		"/vendor/factory/lsensor_2nd_100ms.nv"
+#define LSENSOR_200LUX_CALIBRATION_FILE_2ND	"lsensor_2nd_200lux.nv"
+#define LSENSOR_1000LUX_CALIBRATION_FILE_2ND	"lsensor_2nd_1000lux.nv"
+#define LSENSOR_CALIBRATION_FILE_2ND			"lsensor_2nd.nv"
+#define LSENSOR_50MS_CALIBRATION_FILE_2ND		"lsensor_2nd_50ms.nv"
+#define LSENSOR_100MS_CALIBRATION_FILE_2ND		"lsensor_2nd_100ms.nv"
 
 
 /**
@@ -531,37 +540,27 @@ extern void hallsensor_report_lid(int lid);
  * @PSENSOR_LOW_CALIBRATION_FILE : low calibration file.
  * @PSENSOR_INF_CALIBRATION_FILE : cross talk calibration file.
  */
-#define PSENSOR_HI_CALIBRATION_FILE  	"/vendor/factory/psensor_hi.nv"
-#define PSENSOR_LOW_CALIBRATION_FILE  	"/vendor/factory/psensor_low.nv"
-#define PSENSOR_INF_CALIBRATION_FILE  	"/vendor/factory/psensor_inf.nv"
+#define PSENSOR_HI_CALIBRATION_FILE  	"psensor_hi.nv"
+#define PSENSOR_LOW_CALIBRATION_FILE  	"psensor_low.nv"
+#define PSENSOR_INF_CALIBRATION_FILE  	"psensor_inf.nv"
 
 /*For transition period from 3/5 to 2/4 +++*/
-#define PSENSOR_1CM_CALIBRATION_FILE    "/vendor/factory/psensor_1cm.nv"
-#define PSENSOR_2CM_CALIBRATION_FILE  	"/vendor/factory/psensor_2cm.nv"
-#define PSENSOR_4CM_CALIBRATION_FILE  	"/vendor/factory/psensor_4cm.nv"
-#define PSENSOR_3CM_CALIBRATION_FILE  	"/vendor/factory/psensor_3cm.nv"
-#define PSENSOR_5CM_CALIBRATION_FILE  	"/vendor/factory/psensor_5cm.nv"
+#define PSENSOR_1CM_CALIBRATION_FILE    "psensor_1cm.nv"
+#define PSENSOR_2CM_CALIBRATION_FILE  	"psensor_2cm.nv"
+#define PSENSOR_4CM_CALIBRATION_FILE  	"psensor_4cm.nv"
+#define PSENSOR_3CM_CALIBRATION_FILE  	"psensor_3cm.nv"
+#define PSENSOR_5CM_CALIBRATION_FILE  	"psensor_5cm.nv"
 /*For transition period from 3/5 to 2/4 ---*/
 
-#define PSENSOR_HI_CALIBRATION_FILE_2ND  	"/vendor/factory/psensor_2nd_hi.nv"
-#define PSENSOR_LOW_CALIBRATION_FILE_2ND  	"/vendor/factory/psensor_2nd_low.nv"
-#define PSENSOR_INF_CALIBRATION_FILE_2ND  	"/vendor/factory/psensor_2nd_inf.nv"
+#define PSENSOR_HI_CALIBRATION_FILE_2ND  	"psensor_2nd_hi.nv"
+#define PSENSOR_LOW_CALIBRATION_FILE_2ND  	"psensor_2nd_low.nv"
+#define PSENSOR_INF_CALIBRATION_FILE_2ND  	"psensor_2nd_inf.nv"
 
-#define PSENSOR_1CM_CALIBRATION_FILE_2ND    "/vendor/factory/psensor_2nd_1cm.nv"
-#define PSENSOR_2CM_CALIBRATION_FILE_2ND  	"/vendor/factory/psensor_2nd_2cm.nv"
-#define PSENSOR_4CM_CALIBRATION_FILE_2ND  	"/vendor/factory/psensor_2nd_4cm.nv"
-#define PSENSOR_3CM_CALIBRATION_FILE_2ND  	"/vendor/factory/psensor_2nd_3cm.nv"
-#define PSENSOR_5CM_CALIBRATION_FILE_2ND  	"/vendor/factory/psensor_2nd_5cm.nv"
-
-/**
- * Define the path of Front RGB Calibration file.
- * @FRGB_LIGHT1_CALIBRATION_FILE : light1 calibration file.
- * @FRGB_LIGHT2_CALIBRATION_FILE : light2 calibration file.
- * @FRGB_LIGHT3_CALIBRATION_FILE : light3 calibration file.
- */
-#define FRGB_LIGHT1_CALIBRATION_FILE  	"/vendor/factory/frgb_light1.nv"
-#define FRGB_LIGHT2_CALIBRATION_FILE  	"/vendor/factory/frgb_light2.nv"
-#define FRGB_LIGHT3_CALIBRATION_FILE  	"/vendor/factory/frgb_light3.nv"
+#define PSENSOR_1CM_CALIBRATION_FILE_2ND    "psensor_2nd_1cm.nv"
+#define PSENSOR_2CM_CALIBRATION_FILE_2ND  	"psensor_2nd_2cm.nv"
+#define PSENSOR_4CM_CALIBRATION_FILE_2ND  	"psensor_2nd_4cm.nv"
+#define PSENSOR_3CM_CALIBRATION_FILE_2ND  	"psensor_2nd_3cm.nv"
+#define PSENSOR_5CM_CALIBRATION_FILE_2ND  	"psensor_2nd_5cm.nv"
 
 /**
  * psensor_factory_read_high
@@ -569,8 +568,8 @@ extern void hallsensor_report_lid(int lid);
  * 
  * Return value is NOT negative (>=0) if it is success reading from file(.nv)
  */
-extern int 	psensor_factory_read_high(const char *str);
-extern int 	psensor_factory_read_low(const char *str);
+extern int 	psensor_factory_read_high(const char *str, struct device *dev);
+extern int 	psensor_factory_read_low(const char *str, struct device *dev);
 
 /**
  * psensor_factory_write_high
@@ -587,21 +586,21 @@ extern bool psensor_factory_write_low(int calvalue, const char *str);
  *
  * Return value is TRUE if it is success writing value to file(.nv)
  */
-extern int psensor_factory_read_inf(const char *str);
+extern int psensor_factory_read_inf(const char *str, struct device *dev);
 extern bool psensor_factory_write_inf(int calvalue, const char *str);
 
 /*For transition period from 3/5 to 2/4 +++*/
-extern int 	psensor_factory_read_2cm(const char *str);
+extern int 	psensor_factory_read_2cm(const char *str, struct device *dev);
 extern bool psensor_factory_write_2cm(int calvalue, const char *str);
-extern int 	psensor_factory_read_4cm(const char *str);
+extern int 	psensor_factory_read_4cm(const char *str, struct device *dev);
 extern bool psensor_factory_write_4cm(int calvalue, const char *str);
 
-extern int 	psensor_factory_read_3cm(const char *str);
+extern int 	psensor_factory_read_3cm(const char *str, struct device *dev);
 extern bool psensor_factory_write_3cm(int calvalue, const char *str);
-extern int 	psensor_factory_read_5cm(const char *str);
+extern int 	psensor_factory_read_5cm(const char *str, struct device *dev);
 extern bool psensor_factory_write_5cm(int calvalue, const char *str);
 
-extern int psensor_factory_read_1cm(const char *str);
+extern int psensor_factory_read_1cm(const char *str, struct device *dev);
 extern bool psensor_factory_write_1cm(int calvalue, const char *str);
 /*For transition period from 3/5 to 2/4 ---*/
 
@@ -612,7 +611,7 @@ extern bool psensor_factory_write_1cm(int calvalue, const char *str);
  * Return value is NOT negative (>=0) if it is success reading from file(.nv)
  * Return value is TRUE if it is success writing value to file(.nv)
  */
-extern int 	lsensor_factory_read_200lux(const char *str);
+extern int 	lsensor_factory_read_200lux(const char *str, struct device *dev);
 extern bool lsensor_factory_write_200lux(int calvalue, const char *str);
 
 /**
@@ -622,7 +621,7 @@ extern bool lsensor_factory_write_200lux(int calvalue, const char *str);
  * Return value is NOT negative (>=0) if it is success reading from file(.nv)
  * Return value is TRUE if it is success writing value to file(.nv)
  */
-extern int 	lsensor_factory_read_1000lux(const char *str);
+extern int 	lsensor_factory_read_1000lux(const char *str, struct device *dev);
 extern bool lsensor_factory_write_1000lux(int calvalue, const char *str);
 
 /**
@@ -632,46 +631,16 @@ extern bool lsensor_factory_write_1000lux(int calvalue, const char *str);
  * Return value is NOT negative (>=0) if it is success reading from file(.nv)
  * Return value is TRUE if it is success writing value to file(.nv)
  */
-extern int 	lsensor_factory_read(const char *str);
+extern int 	lsensor_factory_read(const char *str, struct device *dev);
 extern bool lsensor_factory_write(int calvalue, const char *str);
 
 /*For transition period from 100ms to 50ms +++*/
-extern int 	lsensor_factory_read_50ms(const char *str);
+extern int 	lsensor_factory_read_50ms(const char *str, struct device *dev);
 extern bool lsensor_factory_write_50ms(int calvalue, const char *str);
 
-extern int 	lsensor_factory_read_100ms(const char *str);
+extern int 	lsensor_factory_read_100ms(const char *str, struct device *dev);
 extern bool lsensor_factory_write_100ms(int calvalue, const char *str);
 /*For transition period from 100ms to 50ms ---*/
-
-/**
- * FRGBsensor_factory_read_light1
- * FRGBsensor_factory_write_light1 - kernel space read/write light1 calibration data. 
- *
- * Return value is NOT negative (>=0) if it is success reading from file(.nv)
- * Return value is TRUE if it is success writing value to file(.nv)
- */
-extern int 	FRGBsensor_factory_read_light1(void);
-extern bool FRGBsensor_factory_write_light1(int calvalue);
-
-/**
- * FRGBsensor_factory_read_light2
- * FRGBsensor_factory_write_light2 - kernel space read/write light2 calibration data. 
- *
- * Return value is NOT negative (>=0) if it is success reading from file(.nv)
- * Return value is TRUE if it is success writing value to file(.nv)
- */
-extern int 	FRGBsensor_factory_read_light2(void);
-extern bool FRGBsensor_factory_write_light2(int calvalue);
-
-/**
- * FRGBsensor_factory_read_light3
- * FRGBsensor_factory_write_light3 - kernel space read/write light3 calibration data. 
- *
- * Return value is NOT negative (>=0) if it is success reading from file(.nv)
- * Return value is TRUE if it is success writing value to file(.nv)
- */
-extern int 	FRGBsensor_factory_read_light3(void);
-extern bool FRGBsensor_factory_write_light3(int calvalue);
 
 /**
  * psensor_GPIO

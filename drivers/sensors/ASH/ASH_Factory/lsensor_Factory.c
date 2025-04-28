@@ -39,45 +39,42 @@
 /*******************************************/
 /* Light Sensor read/write Calibration*/
 /******************************************/
-int lsensor_factory_read_200lux(const char *str)
+int lsensor_factory_read_200lux(const char *str, struct device *dev)
 {
-	struct file *fp = NULL;
-	loff_t pos_lsts = 0;
-	char buf[16];
-	int cal_val = 0, readlen = 0;
-	mm_segment_t old_fs;	
+	const struct firmware *fw;
+	int cal_val = 0;
+	int ret = 0;
+	char buf[8] = {0};
+	size_t readlen = 0;
 
-	fp = filp_open(str, O_RDONLY, S_IRWXU | S_IRWXG | S_IRWXO);
-	if (IS_ERR_OR_NULL(fp)) {
-		err("Light Sensor read 200lux Calibration open (%s) fail\n", str);
-		return -ENOENT;	/*No such file or directory*/
+	if (!str || !dev) {
+		pr_err("Light Sensor read 200lux Calibration: invalid arguments\n");
+		return -EINVAL;
 	}
 
-	old_fs = get_fs();
-	set_fs(KERNEL_DS);
-
-	if (fp->f_op != NULL) {
-		pos_lsts = 0;
-		readlen = vfs_read(fp, buf, 16, &pos_lsts);
-		buf[readlen] = '\0';
-	} else {
-		err("Light Sensor read 200lux Calibration f_op=NULL or op->read=NULL\n");
-		set_fs(old_fs);
-		filp_close(fp, NULL);
-		return -ENXIO;	/*No such device or address*/
+	ret = request_firmware(&fw, str, dev);
+	if (ret) {
+		pr_err("Light Sensor read 200lux Calibration: failed to request firmware %s (%d)\n", str, ret);
+		return ret;
 	}
 
-	set_fs(old_fs);
-	filp_close(fp, NULL);
+	readlen = min_t(size_t, fw->size, sizeof(buf) - 1);
+	memcpy(buf, fw->data, readlen);
+	buf[readlen] = '\0';
 
-	sscanf(buf, "%d", &cal_val);	
-	if(cal_val < 0) {
-		err("Light Sensor read 200lux Calibration is FAIL. (%d)\n", cal_val);
-		return -EINVAL;	/*Invalid argument*/
+	ret = kstrtoint(buf, 10, &cal_val);
+	if (ret) {
+		pr_err("Light Sensor read 200lux Calibration: invalid content format in %s\n", str);
+		cal_val = -EINVAL;
+	} else if (cal_val < 0) {
+		pr_err("Light Sensor read 200lux Calibration: invalid value (%d)\n", cal_val);
+		cal_val = -EINVAL;
 	} else {
-		dbg("Light Sensor read 200lux Calibration: Cal: %d\n", cal_val);
-	}	
-	
+		pr_info("Light Sensor read 200lux Calibration: %d\n", cal_val);
+	}
+
+	release_firmware(fw);
+
 	return cal_val;
 }
 EXPORT_SYMBOL(lsensor_factory_read_200lux);
@@ -119,45 +116,42 @@ bool lsensor_factory_write_200lux(int calvalue, const char *str)
 }
 EXPORT_SYMBOL(lsensor_factory_write_200lux);
 
-int lsensor_factory_read_1000lux(const char *str)
+int lsensor_factory_read_1000lux(const char *str, struct device *dev)
 {
-	struct file *fp = NULL;
-	loff_t pos_lsts = 0;
-	char buf[16];
-	int cal_val = 0, readlen = 0;
-	mm_segment_t old_fs;	
+	const struct firmware *fw;
+	int cal_val = 0;
+	int ret = 0;
+	char buf[8] = {0};
+	size_t readlen = 0;
 
-	fp = filp_open(str, O_RDONLY, S_IRWXU | S_IRWXG | S_IRWXO);
-	if (IS_ERR_OR_NULL(fp)) {
-		err("Light Sensor read 1000lux Calibration open (%s) fail\n", str);
-		return -ENOENT;	/*No such file or directory*/
+	if (!str || !dev) {
+		pr_err("Light Sensor read 300lux Calibration: invalid arguments\n");
+		return -EINVAL;
 	}
 
-	old_fs = get_fs();
-	set_fs(KERNEL_DS);
-
-	if (fp->f_op != NULL) {
-		pos_lsts = 0;
-		readlen = vfs_read(fp, buf, 16, &pos_lsts);
-		buf[readlen] = '\0';
-	} else {
-		err("Light Sensor read 1000lux Calibration f_op=NULL or op->read=NULL\n");
-		set_fs(old_fs);
-		filp_close(fp, NULL);
-		return -ENXIO;	/*No such device or address*/
+	ret = request_firmware(&fw, str, dev);
+	if (ret) {
+		pr_err("Light Sensor read 300lux Calibration: failed to request firmware %s (%d)\n", str, ret);
+		return ret;
 	}
 
-	set_fs(old_fs);
-	filp_close(fp, NULL);
+	readlen = min_t(size_t, fw->size, sizeof(buf) - 1);
+	memcpy(buf, fw->data, readlen);
+	buf[readlen] = '\0';
 
-	sscanf(buf, "%d", &cal_val);	
-	if(cal_val < 0) {
-		err("Light Sensor read 1000lux Calibration is FAIL. (%d)\n", cal_val);
-		return -EINVAL;	/*Invalid argument*/
+	ret = kstrtoint(buf, 10, &cal_val);
+	if (ret) {
+		pr_err("Light Sensor read 300lux Calibration: invalid content format in %s\n", str);
+		cal_val = -EINVAL;
+	} else if (cal_val < 0) {
+		pr_err("Light Sensor read 300lux Calibration: invalid value (%d)\n", cal_val);
+		cal_val = -EINVAL;
 	} else {
-		dbg("Light Sensor read 1000lux Calibration: Cal: %d\n", cal_val);
-	}	
-	
+		pr_info("Light Sensor read 300lux Calibration: %d\n", cal_val);
+	}
+
+	release_firmware(fw);
+
 	return cal_val;
 }
 EXPORT_SYMBOL(lsensor_factory_read_1000lux);
@@ -199,45 +193,42 @@ bool lsensor_factory_write_1000lux(int calvalue, const char *str)
 }
 EXPORT_SYMBOL(lsensor_factory_write_1000lux);
 
-int lsensor_factory_read(const char *str)
+int lsensor_factory_read(const char *str, struct device *dev)
 {
-	struct file *fp = NULL;
-	loff_t pos_lsts = 0;
-	char buf[16];
-	int cal_val = 0, readlen = 0;
-	mm_segment_t old_fs;	
+	const struct firmware *fw;
+	int cal_val = 0;
+	int ret = 0;
+	char buf[8] = {0};
+	size_t readlen = 0;
 
-	fp = filp_open(str, O_RDONLY, S_IRWXU | S_IRWXG | S_IRWXO);
-	if (IS_ERR_OR_NULL(fp)) {
-		err("Light Sensor read Calibration open (%s) fail\n", str);
-		return -ENOENT;	/*No such file or directory*/
+	if (!str || !dev) {
+		pr_err("Light Sensor read Calibration: invalid arguments\n");
+		return -EINVAL;
 	}
 
-	old_fs = get_fs();
-	set_fs(KERNEL_DS);
-
-	if (fp->f_op != NULL) {
-		pos_lsts = 0;
-		readlen = vfs_read(fp, buf, 16, &pos_lsts);
-		buf[readlen] = '\0';
-	} else {
-		err("Light Sensor read Calibration f_op=NULL or op->read=NULL\n");
-		set_fs(old_fs);
-		filp_close(fp, NULL);
-		return -ENXIO;	/*No such device or address*/
+	ret = request_firmware(&fw, str, dev);
+	if (ret) {
+		pr_err("Light Sensor read Calibration: failed to request firmware %s (%d)\n", str, ret);
+		return ret;
 	}
 
-	set_fs(old_fs);
-	filp_close(fp, NULL);
+	readlen = min_t(size_t, fw->size, sizeof(buf) - 1);
+	memcpy(buf, fw->data, readlen);
+	buf[readlen] = '\0';
 
-	sscanf(buf, "%d", &cal_val);	
-	if(cal_val < 0) {
-		err("Light Sensor read Calibration is FAIL. (%d)\n", cal_val);
-		return -EINVAL;	/*Invalid argument*/
+	ret = kstrtoint(buf, 10, &cal_val);
+	if (ret) {
+		pr_err("Light Sensor read Calibration: invalid content format in %s\n", str);
+		cal_val = -EINVAL;
+	} else if (cal_val < 0) {
+		pr_err("Light Sensor read Calibration: invalid value (%d)\n", cal_val);
+		cal_val = -EINVAL;
 	} else {
-		dbg("Light Sensor read Calibration: Cal: %d\n", cal_val);
-	}	
-	
+		pr_info("Light Sensor read Calibration: %d\n", cal_val);
+	}
+
+	release_firmware(fw);
+
 	return cal_val;
 }
 EXPORT_SYMBOL(lsensor_factory_read);
@@ -280,45 +271,42 @@ bool lsensor_factory_write(int calvalue, const char *str)
 EXPORT_SYMBOL(lsensor_factory_write);
 
 /*For transition period from 100ms to 50ms +++*/
-int lsensor_factory_read_50ms(const char *str)
+int lsensor_factory_read_50ms(const char *str, struct device *dev)
 {
-	struct file *fp = NULL;
-	loff_t pos_lsts = 0;
-	char buf[16];
-	int cal_val = 0, readlen = 0;
-	mm_segment_t old_fs;	
+	const struct firmware *fw;
+	int cal_val = 0;
+	int ret = 0;
+	char buf[8] = {0};
+	size_t readlen = 0;
 
-	fp = filp_open(str, O_RDONLY, S_IRWXU | S_IRWXG | S_IRWXO);
-	if (IS_ERR_OR_NULL(fp)) {
-		err("Light Sensor read 50MS Calibration open (%s) fail\n", str);
-		return -ENOENT;	/*No such file or directory*/
+	if (!str || !dev) {
+		pr_err("Light Sensor read 50MS Calibration: invalid arguments\n");
+		return -EINVAL;
 	}
 
-	old_fs = get_fs();
-	set_fs(KERNEL_DS);
-
-	if (fp->f_op != NULL) {
-		pos_lsts = 0;
-		readlen = vfs_read(fp, buf, 16, &pos_lsts);
-		buf[readlen] = '\0';
-	} else {
-		err("Light Sensor read 50MS Calibration f_op=NULL or op->read=NULL\n");
-		set_fs(old_fs);
-		filp_close(fp, NULL);
-		return -ENXIO;	/*No such device or address*/
+	ret = request_firmware(&fw, str, dev);
+	if (ret) {
+		pr_err("Light Sensor read 50MS Calibration: failed to request firmware %s (%d)\n", str, ret);
+		return ret;
 	}
 
-	set_fs(old_fs);
-	filp_close(fp, NULL);
+	readlen = min_t(size_t, fw->size, sizeof(buf) - 1);
+	memcpy(buf, fw->data, readlen);
+	buf[readlen] = '\0';
 
-	sscanf(buf, "%d", &cal_val);	
-	if(cal_val < 0) {
-		err("Light Sensor read 50MS Calibration is FAIL. (%d)\n", cal_val);
-		return -EINVAL;	/*Invalid argument*/
+	ret = kstrtoint(buf, 10, &cal_val);
+	if (ret) {
+		pr_err("Light Sensor read 50MS Calibration: invalid content format in %s\n", str);
+		cal_val = -EINVAL;
+	} else if (cal_val < 0) {
+		pr_err("Light Sensor read 50MS Calibration: invalid value (%d)\n", cal_val);
+		cal_val = -EINVAL;
 	} else {
-		dbg("Light Sensor read 50MS Calibration: Cal: %d\n", cal_val);
-	}	
-	
+		pr_info("Light Sensor read 50MS Calibration: %d\n", cal_val);
+	}
+
+	release_firmware(fw);
+
 	return cal_val;
 }
 EXPORT_SYMBOL(lsensor_factory_read_50ms);
@@ -360,45 +348,42 @@ bool lsensor_factory_write_50ms(int calvalue, const char *str)
 }
 EXPORT_SYMBOL(lsensor_factory_write_50ms);
 
-int lsensor_factory_read_100ms(const char *str)
+int lsensor_factory_read_100ms(const char *str, struct device *dev)
 {
-	struct file *fp = NULL;
-	loff_t pos_lsts = 0;
-	char buf[16];
-	int cal_val = 0, readlen = 0;
-	mm_segment_t old_fs;	
+	const struct firmware *fw;
+	int cal_val = 0;
+	int ret = 0;
+	char buf[8] = {0};
+	size_t readlen = 0;
 
-	fp = filp_open(str, O_RDONLY, S_IRWXU | S_IRWXG | S_IRWXO);
-	if (IS_ERR_OR_NULL(fp)) {
-		err("Light Sensor read 100MS Calibration open (%s) fail\n", str);
-		return -ENOENT;	/*No such file or directory*/
+	if (!str || !dev) {
+		pr_err("Light Sensor read 100MS Calibration: invalid arguments\n");
+		return -EINVAL;
 	}
 
-	old_fs = get_fs();
-	set_fs(KERNEL_DS);
-
-	if (fp->f_op != NULL) {
-		pos_lsts = 0;
-		readlen = vfs_read(fp, buf, 16, &pos_lsts);
-		buf[readlen] = '\0';
-	} else {
-		err("Light Sensor read 100MS Calibration f_op=NULL or op->read=NULL\n");
-		set_fs(old_fs);
-		filp_close(fp, NULL);
-		return -ENXIO;	/*No such device or address*/
+	ret = request_firmware(&fw, str, dev);
+	if (ret) {
+		pr_err("Light Sensor read 100MS Calibration: failed to request firmware %s (%d)\n", str, ret);
+		return ret;
 	}
 
-	set_fs(old_fs);
-	filp_close(fp, NULL);
+	readlen = min_t(size_t, fw->size, sizeof(buf) - 1);
+	memcpy(buf, fw->data, readlen);
+	buf[readlen] = '\0';
 
-	sscanf(buf, "%d", &cal_val);	
-	if(cal_val < 0) {
-		err("Light Sensor read 100MS Calibration is FAIL. (%d)\n", cal_val);
-		return -EINVAL;	/*Invalid argument*/
+	ret = kstrtoint(buf, 10, &cal_val);
+	if (ret) {
+		pr_err("Light Sensor read 100MS Calibration: invalid content format in %s\n", str);
+		cal_val = -EINVAL;
+	} else if (cal_val < 0) {
+		pr_err("Light Sensor read 100MS Calibration: invalid value (%d)\n", cal_val);
+		cal_val = -EINVAL;
 	} else {
-		dbg("Light Sensor read 100MS Calibration: Cal: %d\n", cal_val);
-	}	
-	
+		pr_info("Light Sensor read 100MS Calibration: %d\n", cal_val);
+	}
+
+	release_firmware(fw);
+
 	return cal_val;
 }
 EXPORT_SYMBOL(lsensor_factory_read_100ms);
