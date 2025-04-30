@@ -1,0 +1,97 @@
+name: Kernel Build
+
+on:
+  workflow_dispatch:
+
+env:
+  TZ: Asia/Kolkata
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout Kernel Source
+      - name: Checkout Kernel Source
+        uses: actions/checkout@v4.2.2
+
+      # Step 2: Install Build Dependencies
+      - name: Install Build Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            git ccache build-essential bc bison flex libssl-dev libncurses-dev \
+            liblz4-tool libzstd-dev zstd curl python3 unzip aria2 device-tree-compiler
+
+      # Step 3: Download Neutron Clang Toolchain
+      - name: Download Neutron Clang Toolchain
+        run: |
+          TOOLCHAIN_DIR="$HOME/toolchains/neutron-clang"
+          mkdir -p "$TOOLCHAIN_DIR"
+          cd "$TOOLCHAIN_DIR"
+          curl -LO "https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman"
+          chmod +x antman
+          ./antman -S
+
+      # Step 4: Write IST Build Time
+      - name: Write IST Build Time to File
+        run: |
+          mkdir -p out
+          IST_TIME=$(date +"%Y-%m-%d %H:%M:%S IST")
+          echo "Build Time (IST): $IST_TIME" > out/ist_build_time.txt
+
+      # Step 5: Configure and Build Kernel
+      - name: Configure and Build Kernel
+        run: |
+          export PATH="$HOME/toolchains/neutron-clang/bin:$PATH"
+
+          make distclean
+          make -j$(nproc) O=out ARCH=arm64 \
+            LOCALVERSION="-$(date +%Y-%m-%d-%H-%M-%S)-IST" \
+            CC=clang \
+            CLANG_TRIPLE=aarch64-linux-gnu- \
+            CROSS_COMPILE=$HOME/toolchains/neutron-clang/bin/aarch64-linux-android- \
+            AR=llvm-ar \
+            HOSTCC=clang \
+            HOSTCXX=clang++ \
+            NM=llvm-nm \
+            LLVM_DIS=llvm-dis \
+            OBJCOPY=llvm-objcopy \
+            READELF=llvm-readelf \
+            OBJDUMP=llvm-objdump \
+            OBJSIZE=llvm-size \
+            STRIP=llvm-strip \
+            LLVM=1 \
+            LD=ld.lld \
+            LLVM_IAS=1 \
+            vendor/obiwan_defconfig all
+
+      # Step 6: Merge DTBs
+      - name: Merge DTBs
+        run: |
+          find out/arch/arm64/boot/dts/vendor -name '*.dtb' -exec cat {} + > out/arch/arm64/boot/dtb
+
+      # Step 7: Package with AnyKernel3
+      - name: Package with AnyKernel3
+        run: |
+          IST_TIME=$(date +"%Y-%m-%d_%H-%M-%S")
+          ZIP_NAME="AK3_obiwan_${IST_TIME}.zip"
+          echo "$ZIP_NAME" > zip_name.txt
+
+          git clone https://github.com/SA9990/AK3_obiwan.git
+
+          cp out/arch/arm64/boot/Image AK3_obiwan/
+          cp out/arch/arm64/boot/dtb AK3_obiwan/
+          find out/ -type f -name "*.ko" -exec cp {} AK3_obiwan/modules/system/lib/modules/ \; || true
+          find out/ -type f -name "dtbo.img" -exec cp {} AK3_obiwan/ \; || true
+
+          cd AK3_obiwan
+          zip -r9 "../$ZIP_NAME" * -x .git README.md *placeholder
+
+      # Step 8: Upload AnyKernel3 ZIP to GitHub Artifacts
+      - name: Upload ZIP to GitHub Artifacts
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: AK3_obiwan
+          path: "*.zip"
+
