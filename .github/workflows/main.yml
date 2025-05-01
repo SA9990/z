@@ -46,7 +46,7 @@ jobs:
         run: |
           export PATH="$HOME/toolchains/neutron-clang/bin:$PATH"
           export KBUILD_BUILD_USER="Shreyash"
-          export KBUILD_BUILD_HOST="nanD"
+          export KBUILD_BUILD_HOST="nand"
 
           make distclean
           make -j$(nproc) O=out ARCH=arm64 \
