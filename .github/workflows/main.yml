@@ -37,7 +37,7 @@ jobs:
       - name: Write IST Build Time to File
         run: |
           mkdir -p out
-          IST_TIME=$(date +"%Y-%m-%d %H:%M:%S IST")
+          IST_TIME=$(date +"%Y-%m-%d %H:%M IST")
           echo "Build Time (IST): $IST_TIME" > out/ist_build_time.txt
 
       # Step 5: Configure and Build Kernel
@@ -47,7 +47,6 @@ jobs:
 
           make distclean
           make -j$(nproc) O=out ARCH=arm64 \
-            LOCALVERSION="-$(date +%Y-%m-%d-%H-%M-%S)-IST" \
             CC=clang \
             CLANG_TRIPLE=aarch64-linux-gnu- \
             CROSS_COMPILE=$HOME/toolchains/neutron-clang/bin/aarch64-linux-android- \
@@ -74,7 +73,7 @@ jobs:
       # Step 7: Package with AnyKernel3
       - name: Package with AnyKernel3
         run: |
-          IST_TIME=$(date +"%Y-%m-%d_%H-%M-%S")
+          IST_TIME=$(date +"%Y-%m-%d_%H-%M")
           ZIP_NAME="AK3_obiwan_${IST_TIME}.zip"
           echo "$ZIP_NAME" > zip_name.txt
 
