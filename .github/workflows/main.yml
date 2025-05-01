@@ -95,4 +95,3 @@ jobs:
         with:
           name: AK3_obiwan
           path: "*.zip"
-
