@@ -44,7 +44,9 @@ jobs:
       - name: Configure and Build Kernel
         run: |
           export PATH="$HOME/toolchains/neutron-clang/bin:$PATH"
-
+          # Set kernel build user and host
+          export KBUILD_BUILD_USER="Shreyash"
+          export KBUILD_BUILD_HOST="nanD"
           make distclean
           make -j$(nproc) O=out ARCH=arm64 \
             CC=clang \
