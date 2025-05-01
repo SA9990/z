@@ -23,17 +23,18 @@ jobs:
             git ccache build-essential bc bison flex libssl-dev libncurses-dev \
             liblz4-tool libzstd-dev zstd curl python3 unzip aria2 device-tree-compiler
 
-      # Step 3: Download Neutron Clang Toolchain
-      - name: Download Neutron Clang Toolchain
+      # Step 3: Download and Sync Neutron Clang Toolchain with Updated AntMan
+      - name: Download and Sync Neutron Clang Toolchain
         run: |
           TOOLCHAIN_DIR="$HOME/toolchains/neutron-clang"
           mkdir -p "$TOOLCHAIN_DIR"
           cd "$TOOLCHAIN_DIR"
           curl -LO "https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman"
           chmod +x antman
-          ./antman -S
+          ./antman -A  # Update AntMan
+          ./antman -S  # Sync latest Neutron Clang build
 
-      # Step 4: Write IST Build Time
+      # Step 4: Write IST Build Time to File
       - name: Write IST Build Time to File
         run: |
           mkdir -p out
@@ -44,9 +45,9 @@ jobs:
       - name: Configure and Build Kernel
         run: |
           export PATH="$HOME/toolchains/neutron-clang/bin:$PATH"
-          # Set kernel build user and host
           export KBUILD_BUILD_USER="Shreyash"
           export KBUILD_BUILD_HOST="nanD"
+
           make distclean
           make -j$(nproc) O=out ARCH=arm64 \
             CC=clang \
