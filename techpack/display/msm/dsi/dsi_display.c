@@ -199,11 +199,6 @@ void asus_display_apply_fps_setting(void)
 		return;
 	}
 
-	if (g_display->panel->asus_global_hbm_mode == 1) {
-		printk("[Display] skip fps %d due to GHBM\n", asus_current_fps);
-		return;
-	}
-
 	if (asus_current_fps >= 60 && asus_current_fps < 90)
 		dsi_panel_asus_switch_fps(g_display->panel, 2);
 	else if (asus_current_fps >= 90 && asus_current_fps < 120)
