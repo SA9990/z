@@ -45,14 +45,12 @@ jobs:
             CC=clang \
             CROSS_COMPILE=aarch64-linux-gnu- \
             LLVM=1 \
-            LD=ld.lld \
             LLVM_IAS=1 \
 
           make -j$(nproc) O=out ARCH=arm64 \
             CC=clang \
             CROSS_COMPILE=aarch64-linux-gnu- \
             LLVM=1 \
-            LD=ld.lld \
             LLVM_IAS=1 \
 
       - name: Merge DTBs
