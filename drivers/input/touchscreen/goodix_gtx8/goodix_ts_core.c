@@ -2379,18 +2379,11 @@ static void goodix_resume_work(struct work_struct *work)
 			ts_info("resume --- wait sec for FP status(%d) process_resume(%d)", fp_status, process_resume);
 		}
 	}
-	if(get_aod_processing() == true) {
-		if(asus_display_global_hbm_mode() == 0) {
-			ts_info("[KEY_U] asus_display_global_hbm_mode = 0");
-			enable_aod_processing(false);
-		} else {
-			ts_info("resume wait 0.5 sec - HBM(%d)", asus_display_global_hbm_mode());
-			schedule_delayed_work(&gts_core_data->gts_resume_work, msecs_to_jiffies(500)); // 0.5 sec
-			return;
-		}
-	} else {
+
+	if(get_aod_processing() == true)
+		enable_aod_processing(false);
+	else
 		ts_info("resume ... ");
-	}
 
 	mutex_lock(&gts_core_data->gts_suspend_mutex);
 	goodix_ts_resume(gts_core_data);
