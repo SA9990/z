@@ -18,7 +18,7 @@ jobs:
         run: |
             sudo apt install -y \
             git ccache build-essential bc bison flex libssl-dev libncurses-dev \
-            liblz4-tool libzstd-dev zstd curl python3 unzip aria2 device-tree-compiler
+            liblz4-tool libzstd-dev zstd curl python3 unzip aria2 device-tree-compiler binutils-aarch64-linux-gnu
 
       - name: Download Toolchain
         run: |
