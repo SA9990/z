@@ -37,9 +37,7 @@ jobs:
 
       - name: Configure and Build Kernel
         run: |
-          
           export PATH="$HOME/toolchains/clang/bin:$PATH"
-          
 
           make distclean
           make -j$(nproc) O=out ARCH=arm64 \
@@ -60,8 +58,7 @@ jobs:
             LD=ld.lld \
             LLVM_IAS=1 \
             vendor/obiwan_defconfig
-            
-            
+
           make -j$(nproc) O=out ARCH=arm64 \
             CC=clang \
             CLANG_TRIPLE=aarch64-linux-gnu- \
@@ -78,8 +75,7 @@ jobs:
             STRIP=llvm-strip \
             LLVM=1 \
             LD=ld.lld \
-            LLVM_IAS=1 \
-            
+            LLVM_IAS=1
 
       - name: Merge DTBs
         run: |
