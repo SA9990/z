@@ -1,10 +1,35 @@
-- name: Download Toolchain
+name: Upload Neutron Toolchain
+
+on:
+  workflow_dispatch:
+
+env:
+  TZ: Asia/Kolkata
+  TOOLCHAIN_DIR: $HOME/toolchains/neutron-clang
+
+jobs:
+  upload-toolchain:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install Dependencies
         run: |
-          TOOLCHAIN_DIR="$HOME/toolchains/neutron-clang"
+          sudo apt update
+          sudo apt install -y curl unzip
+
+      - name: Download Neutron Toolchain using Antman
+        run: |
           mkdir -p "$TOOLCHAIN_DIR"
           cd "$TOOLCHAIN_DIR"
           curl -LO "https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman"
           chmod +x antman
           ./antman -S
-          echo "Toolchain files:"
-          ls -lR "$TOOLCHAIN_DIR"
+
+      - name: List Toolchain Contents
+        run: ls -lR "$TOOLCHAIN_DIR"
+
+      - name: Upload Toolchain Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: neutron-toolchain
+          path: ${{ env.TOOLCHAIN_DIR }}
