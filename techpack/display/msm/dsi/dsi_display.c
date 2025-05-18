@@ -1394,10 +1394,7 @@ int dsi_display_set_power(struct drm_connector *connector,
 	switch (power_mode) {
 	case SDE_MODE_DPMS_LP1:
 		pr_err("[Display] enter LP1 doze\n");
-		if (g_display->panel->asus_global_hbm_mode && asus_var_manual_idle_out) {
-			printk("[Display] BUG: do not enter LP1 while GHBM\n");
-			break;
-		}
+		dsi_panel_set_global_hbm(display->panel, 0);
 		if (asus_var_manual_idle_out || !asus_display_in_aod()) {
 			pr_err("[Display] set LP1 command\n");
 			rc = dsi_panel_set_lp1(display->panel);
@@ -1412,11 +1409,9 @@ int dsi_display_set_power(struct drm_connector *connector,
 		break;
 	case SDE_MODE_DPMS_LP2:
 		pr_err("[Display] enter LP2 doze suspend\n");
+		dsi_panel_set_global_hbm(g_display->panel, 0);
 		if (asus_var_manual_idle_out) {
 			printk("[Display] previous idle out, send LP1 command\n");
-
-			// if global hbm is on, turn it off in doze suspend
-			dsi_panel_set_global_hbm(g_display->panel, 0);
 			rc = dsi_panel_set_lp1(display->panel);
 			asus_display_set_panel_aod_bl();
 			asus_var_manual_idle_out = false;
@@ -1424,7 +1419,6 @@ int dsi_display_set_power(struct drm_connector *connector,
 			asus_drm_notify(ASUS_NOTIFY_SPOT_READY, 0);
 			asus_drm_notify(ASUS_NOTIFY_GHBM_ON_READY, 0);
 			asus_drm_notify(ASUS_NOTIFY_GHBM_ON_REQ, 0);
-			g_display->panel->asus_global_hbm_mode = 0;
 		}
 		rc = dsi_panel_set_lp2(display->panel);
 		display->panel->power_mode = power_mode;
@@ -1439,11 +1433,12 @@ int dsi_display_set_power(struct drm_connector *connector,
 			rc = dsi_panel_set_nolp(display->panel);
 		}
 
-		if (display->panel->power_mode == SDE_MODE_DPMS_LP2 &&
-			display->panel->asus_global_hbm_mode) {
-			pr_err("[Display] LP2 -> ON and need global HBM, re-enable it\n");
+		if (display->panel->asus_global_hbm_mode) {
+			pr_err("[Display] screen turn ON and need global HBM, re-enable it\n");
+			g_display->panel->asus_global_hbm_pending_mode = 1;
 			asus_var_global_hbm_pending = true;
 		}
+
 		// ASUS_BSP +++ Touch
 		phone_touch_resume();
 		// ASUS_BSP --- Touch
@@ -6405,8 +6400,6 @@ static ssize_t asus_display_proc_global_hbm_write(struct file *filp, const char 
 		}
 	} else {
 		pr_err("[Display] unable to set global hbm in normal off mode\n");
-		if (asus_display_panel_valid())
-			g_display->panel->asus_global_hbm_mode = 0;
 	}
 
 	return len;
@@ -9839,7 +9832,7 @@ int dsi_display_disable(struct dsi_display *display)
 
 	// reset panel HBM related variable
 	display->panel->asus_hbm_mode = 0;
-	display->panel->asus_global_hbm_mode = 0;
+	//display->panel->asus_global_hbm_mode = 0;
 	display->panel->asus_local_hbm_mode = 0;
 	old_has_fov_makser = false;
 	asus_drm_notify(ASUS_NOTIFY_SPOT_READY, 0);

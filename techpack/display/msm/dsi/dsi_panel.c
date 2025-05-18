@@ -747,7 +747,7 @@ int asus_display_convert_backlight(struct dsi_panel *panel, int bl_lvl)
 {
 	int backlight_converted = bl_lvl;
 
-	if ((asus_display_in_aod() || !bl_lvl) && !panel->asus_global_hbm_mode) {
+	if (asus_display_in_aod() || !bl_lvl) {
 		if (bl_lvl > ASUS_AOD_THRES || !bl_lvl) {
 			backlight_converted = asus_alpm_bl_high;
 			pr_err("[Display] convert to %d, reason AOD\n", asus_alpm_bl_high);
