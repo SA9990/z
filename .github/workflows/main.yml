@@ -41,14 +41,12 @@ jobs:
           export PATH="$HOME/toolchains/neutron-clang/bin:$PATH"
 
           make distclean
-          make -j$(nproc) O=out ARCH=arm64 \
+          make -j$(nproc) O=out vendor/obiwan_defconfig ARCH=arm64 \
             CC=clang \
-            
             CROSS_COMPILE=aarch64-linux-gnu- \
             LLVM=1 \
             LD=ld.lld \
             LLVM_IAS=1 \
-            vendor/obiwan_defconfig
 
           make -j$(nproc) O=out ARCH=arm64 \
             CC=clang \
