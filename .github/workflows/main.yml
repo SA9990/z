@@ -1,4 +1,4 @@
-name: Kernel Build
+name: Kernel Build(neutron)
 
 on:
   workflow_dispatch:
@@ -16,18 +16,18 @@ jobs:
 
       - name: Install Build Dependencies
         run: |
-          sudo apt update
-          sudo apt install -y \
+            sudo apt install -y \
             git ccache build-essential bc bison flex libssl-dev libncurses-dev \
             liblz4-tool libzstd-dev zstd curl python3 unzip aria2 device-tree-compiler
 
-      - name: Download and Sync Clang Toolchain
+      - name: Download Toolchain
         run: |
-          TOOLCHAIN_DIR="$HOME/toolchains/clang"
+          TOOLCHAIN_DIR="$HOME/toolchains/neutron-clang"
           mkdir -p "$TOOLCHAIN_DIR"
           cd "$TOOLCHAIN_DIR"
-          curl -L "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main-kernel/clang-r563880.tar.gz" -o clang-toolchain.tar.gz
-          tar -xvzf clang-toolchain.tar.gz
+          curl -LO "https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman"
+          chmod +x antman
+          ./antman -S
 
       - name: Write IST Build Time to File
         run: |
@@ -37,23 +37,14 @@ jobs:
 
       - name: Configure and Build Kernel
         run: |
-          export PATH="$HOME/toolchains/clang/bin:$PATH"
+          set -e
+          export PATH="$HOME/toolchains/neutron-clang/bin:$PATH"
 
           make distclean
           make -j$(nproc) O=out ARCH=arm64 \
             CC=clang \
-            CLANG_TRIPLE=aarch64-linux-gnu- \
-            CROSS_COMPILE=$HOME/toolchains/clang/bin/aarch64-linux-android- \
-            AR=llvm-ar \
-            HOSTCC=clang \
-            HOSTCXX=clang++ \
-            NM=llvm-nm \
-            LLVM_DIS=llvm-dis \
-            OBJCOPY=llvm-objcopy \
-            READELF=llvm-readelf \
-            OBJDUMP=llvm-objdump \
-            OBJSIZE=llvm-size \
-            STRIP=llvm-strip \
+            
+            CROSS_COMPILE=aarch64-linux-gnu- \
             LLVM=1 \
             LD=ld.lld \
             LLVM_IAS=1 \
@@ -61,21 +52,10 @@ jobs:
 
           make -j$(nproc) O=out ARCH=arm64 \
             CC=clang \
-            CLANG_TRIPLE=aarch64-linux-gnu- \
-            CROSS_COMPILE=$HOME/toolchains/clang/bin/aarch64-linux-android- \
-            AR=llvm-ar \
-            HOSTCC=clang \
-            HOSTCXX=clang++ \
-            NM=llvm-nm \
-            LLVM_DIS=llvm-dis \
-            OBJCOPY=llvm-objcopy \
-            READELF=llvm-readelf \
-            OBJDUMP=llvm-objdump \
-            OBJSIZE=llvm-size \
-            STRIP=llvm-strip \
+            CROSS_COMPILE=aarch64-linux-gnu- \
             LLVM=1 \
             LD=ld.lld \
-            LLVM_IAS=1
+            LLVM_IAS=1 \
 
       - name: Merge DTBs
         run: |
