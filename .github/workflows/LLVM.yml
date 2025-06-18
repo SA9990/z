@@ -1,0 +1,115 @@
+name: Kernel Build(llvm)
+
+on:
+  workflow_dispatch:
+
+env:
+  TZ: Asia/Kolkata
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Kernel Source
+        uses: actions/checkout@v4.2.2
+
+      - name: Install Build Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            git ccache build-essential bc bison flex libssl-dev libncurses-dev \
+            liblz4-tool libzstd-dev zstd curl python3 unzip aria2 device-tree-compiler
+
+      - name: Download and Extract LLVM 20.1.7 Toolchain
+        run: |
+          TOOLCHAIN_DIR="$HOME/toolchains/clang"
+          mkdir -p "$TOOLCHAIN_DIR"
+          cd "$TOOLCHAIN_DIR"
+          curl -L "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.7/LLVM-20.1.7-Linux-X64.tar.xz" -o llvm.tar.xz
+          tar -xf llvm.tar.xz --strip-components=1
+
+      - name: Write IST Build Time to File
+        run: |
+          mkdir -p out
+          IST_TIME=$(date +"%Y-%m-%d %H:%M IST")
+          echo "Build Time (IST): $IST_TIME" > out/ist_build_time.txt
+
+      - name: Configure and Build Kernel
+        run: |
+          export PATH="$HOME/toolchains/clang/bin:$PATH"
+
+          make distclean
+          make -j$(nproc) O=out ARCH=arm64 \
+            CC=clang \
+            CLANG_TRIPLE=aarch64-linux-gnu- \
+            CROSS_COMPILE=aarch64-linux-gnu- \
+            AR=llvm-ar \
+            HOSTCC=clang \
+            HOSTCXX=clang++ \
+            NM=llvm-nm \
+            LLVM_DIS=llvm-dis \
+            OBJCOPY=llvm-objcopy \
+            READELF=llvm-readelf \
+            OBJDUMP=llvm-objdump \
+            OBJSIZE=llvm-size \
+            STRIP=llvm-strip \
+            LLVM=1 \
+            LD=ld.lld \
+            LLVM_IAS=1 \
+            vendor/obiwan_defconfig
+
+          make -j$(nproc) O=out ARCH=arm64 \
+            CC=clang \
+            CLANG_TRIPLE=aarch64-linux-gnu- \
+            CROSS_COMPILE=aarch64-linux-gnu- \
+            AR=llvm-ar \
+            HOSTCC=clang \
+            HOSTCXX=clang++ \
+            NM=llvm-nm \
+            LLVM_DIS=llvm-dis \
+            OBJCOPY=llvm-objcopy \
+            READELF=llvm-readelf \
+            OBJDUMP=llvm-objdump \
+            OBJSIZE=llvm-size \
+            STRIP=llvm-strip \
+            LLVM=1 \
+            LD=ld.lld \
+            LLVM_IAS=1
+
+      - name: Merge DTBs
+        run: |
+          find out/arch/arm64/boot/dts/vendor -name '*.dtb' -exec cat {} + > out/arch/arm64/boot/dtb
+
+      - name: Package with AnyKernel3
+        run: |
+          IST_TIME=$(date +"%Y-%m-%d_%H-%M")
+          ZIP_NAME="AK3_obiwan_${IST_TIME}.zip"
+          echo "$ZIP_NAME" > zip_name.txt
+
+          git clone https://github.com/SA9990/AK3_obiwan.git
+
+          cp out/arch/arm64/boot/Image AK3_obiwan/
+          cp out/arch/arm64/boot/dtb AK3_obiwan/
+          find out/ -type f -name "*.ko" -exec cp {} AK3_obiwan/modules/system/lib/modules/ \; || true
+          find out/ -type f -name "dtbo.img" -exec cp {} AK3_obiwan/ \; || true
+
+          cd AK3_obiwan
+          zip -r9 "../$ZIP_NAME" * -x .git README.md *placeholder
+
+      - name: Upload ZIP to GitHub Artifacts
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: AnyKernel
+          path: "*.zip"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2.3.2
+        with:
+          tag_name: "build-llvm"
+          name: "Kernel Build llvm"
+          body: |
+            kernel build (obiwan)
+          files: "*.zip"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
