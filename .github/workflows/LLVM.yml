@@ -1,4 +1,4 @@
-name: Kernel Build(llvm)
+name: Kernel Build (LLVM)
 
 on:
   workflow_dispatch:
@@ -21,23 +21,31 @@ jobs:
             git ccache build-essential bc bison flex libssl-dev libncurses-dev \
             liblz4-tool libzstd-dev zstd curl python3 unzip aria2 device-tree-compiler
 
-      - name: Download and Extract LLVM 20.1.7 Toolchain
+      - name: Setup Cache for LLVM Toolchain
+        id: cache-llvm
+        uses: actions/cache@v4
+        with:
+          path: ~/toolchains/clang
+          key: llvm-binutils-v1
+
+      - name: Download and Extract LLVM Toolchain
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
           TOOLCHAIN_DIR="$HOME/toolchains/clang"
           mkdir -p "$TOOLCHAIN_DIR"
           cd "$TOOLCHAIN_DIR"
-          curl -L "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.7/LLVM-20.1.7-Linux-X64.tar.xz" -o llvm.tar.xz
-          tar -xf llvm.tar.xz --strip-components=1
+          curl -L "https://github.com/SA9990/tc-build/releases/download/main/llvm-binutils.zip" -o llvm.zip
+          unzip llvm.zip
 
-      - name: Write IST Build Time to File
+      - name: Write Build Time
         run: |
           mkdir -p out
           IST_TIME=$(date +"%Y-%m-%d %H:%M IST")
           echo "Build Time (IST): $IST_TIME" > out/ist_build_time.txt
 
-      - name: Configure and Build Kernel
+      - name: Build Kernel
         run: |
-          export PATH="$HOME/toolchains/clang/bin:$PATH"
+          export PATH="$HOME/toolchains/clang/install/bin:$PATH"
 
           make distclean
           make -j$(nproc) O=out ARCH=arm64 \
@@ -97,7 +105,7 @@ jobs:
           cd AK3_obiwan
           zip -r9 "../$ZIP_NAME" * -x .git README.md *placeholder
 
-      - name: Upload ZIP to GitHub Artifacts
+      - name: Upload ZIP to Artifacts
         uses: actions/upload-artifact@v4.6.2
         with:
           name: AnyKernel
@@ -106,10 +114,11 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2.3.2
         with:
-          tag_name: "build-llvm"
-          name: "Kernel Build llvm"
+          tag_name: build-${{ github.run_number }}
+          name: Kernel Build ${{ github.run_number }}
           body: |
-            kernel build (obiwan)
+            Kernel build for obiwan with LLVM Toolchain.
+            Build Number: ${{ github.run_number }}
           files: "*.zip"
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
