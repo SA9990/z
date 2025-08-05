@@ -3797,7 +3797,7 @@ bool calculation_long_full_time_reset(void){
 		temp_time = now_time - last_long_full_total_time;
 		if (temp_time > 0)
 			long_full_total_time += temp_time;
-			last_long_full_total_time = now_time;
+		last_long_full_total_time = now_time;
 	}	
 
 	if(long_full_total_time >= RESET_LONG_FULL_TIME_CONDITION){
@@ -3832,7 +3832,7 @@ bool calculation_long_full_time_check(int bat_cur){
 		temp_time = now_time - last_long_full_check_time;
 		if (temp_time > 0)
 			long_full_check_time += temp_time;
-			last_long_full_check_time = now_time;
+		last_long_full_check_time = now_time;
 	}
 
 	if(long_full_check_time >= CHECK_LONG_FULL_TIME_CONDITION){
