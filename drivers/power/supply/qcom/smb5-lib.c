@@ -11598,10 +11598,6 @@ static void safety_timer_resume_charging_work(struct work_struct *work)
 
 static void notify_touch_usbplug_work(struct work_struct *work)
 {
-	struct delayed_work *delayed_work = to_delayed_work(work);
-	struct smb_charger *chg = container_of(delayed_work, struct smb_charger,
-							notify_touch_usbplug_work);
-
 	gts_usb_plugin(notify_touch_usbplug ? false : true);
 	notify_touch_usbplug = notify_touch_usbplug ? false : true;
 	notify_touch_usbplug_flag = true;
