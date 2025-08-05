@@ -1142,7 +1142,7 @@ static int qpnp_lpg_pwm_set_output_pattern(struct pwm_chip *pwm_chip,
 	struct pwm_device *pwm, struct pwm_output_pattern *output_pattern)
 {
 	struct qpnp_lpg_channel *lpg;
-	u64 period_ns, duty_ns, tmp;
+	u64 period_ns;
 	u32 *percentages;
 	int rc = 0, i;
 
