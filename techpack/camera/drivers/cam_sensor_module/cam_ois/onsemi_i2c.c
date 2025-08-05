@@ -280,7 +280,6 @@ int onsemi_write_word(struct cam_ois_ctrl_t * ctrl,uint32_t reg_addr, uint32_t r
 int onsemi_write_dword(struct cam_ois_ctrl_t * ctrl,uint32_t reg_addr, uint32_t reg_data)
 {
 	int rc = 0;
-	bool force_low_priority = false;
 #if 1
 	struct cam_sensor_i2c_reg_setting write_setting;
 	struct cam_sensor_i2c_reg_array data;
@@ -329,7 +328,7 @@ int onsemi_write_dword(struct cam_ois_ctrl_t * ctrl,uint32_t reg_addr, uint32_t 
 	rc = camera_io_dev_write_continuous(&(ctrl->io_master_info),
 										&write_setting,
 										1,//1 burst, 0 sequence
-										force_low_priority);
+										0);
 	if(rc < 0)
 	{
 		pr_err("write 0x%02x 0x%02x 0x%02x 0x%02x to reg 0x%x failed! rc = %d",
@@ -342,7 +341,6 @@ int onsemi_write_dword(struct cam_ois_ctrl_t * ctrl,uint32_t reg_addr, uint32_t 
 int onsemi_write_seq_bytes(struct cam_ois_ctrl_t * ctrl,uint32_t reg_addr, uint8_t* reg_data,uint32_t size)
 {
 	int rc = 0;
-	bool force_low_priority = false;
 
 	struct cam_sensor_i2c_reg_setting write_setting;
 	struct cam_sensor_i2c_reg_array* data = NULL;
@@ -369,7 +367,7 @@ int onsemi_write_seq_bytes(struct cam_ois_ctrl_t * ctrl,uint32_t reg_addr, uint8
 	rc = camera_io_dev_write_continuous(&(ctrl->io_master_info),
 										&write_setting,
 										1,//burst
-										force_low_priority);
+										0);
 	mutex_unlock(&g_dualoisMutex);
 	if(rc < 0)
 	{
