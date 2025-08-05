@@ -3022,7 +3022,7 @@ void long_one_cap_monitor_worker(struct work_struct *work)
 		b_Is_one_pa = false;
 		return;
 	} else {
-		bisVBUS = !gpio_get_value(global_gpio->POGO_OVP_ACOK) | !gpio_get_value(global_gpio->BTM_OVP_ACOK);
+		bisVBUS = !gpio_get_value(global_gpio->POGO_OVP_ACOK) || !gpio_get_value(global_gpio->BTM_OVP_ACOK);
 	}
 	if (bisVBUS){
 		printk(KERN_ERR "VBUS is present, Skip long_one_cap_monitor_worker\n");
