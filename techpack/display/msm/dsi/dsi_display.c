@@ -91,8 +91,8 @@ char asus_var_panel_unique_id[8];       //panel unique ID
 char asus_var_panel_stage[3];           //panel stage
 char asus_var_reg_buffer[REG_BUF_SIZE]; //panel register readback buffer
 bool asus_var_ever_power_off = false;   //workaround for boost MDP clock
-int  asus_alpm_bl_high = 344;
-int  asus_alpm_bl_low = 0;
+int  asus_alpm_bl_high = 459;
+int  asus_alpm_bl_low = 50;
 char lcd_stage[10];
 bool asus_waking_from_aod = false;	//workaround screen off fod on aod
 
@@ -5629,20 +5629,20 @@ void asus_display_set_local_hbm(int enable)
 void asus_display_set_panel_aod_bl(void)
 {
 	if (strncmp(lcd_stage, "2", 1) == 0){ //SR
-		asus_alpm_bl_high = 344;
-		asus_alpm_bl_low = 0;
+		asus_alpm_bl_high = 459;
+		asus_alpm_bl_low = 50;
 	} else if (strncmp(lcd_stage, "3", 1) == 0) { //ER1
-		asus_alpm_bl_high = 344;
-		asus_alpm_bl_low = 0;
+		asus_alpm_bl_high = 459;
+		asus_alpm_bl_low = 50;
 	} else if (strncmp(lcd_stage, "4", 1) == 0) { //ER2
-		asus_alpm_bl_high = 100;
-		asus_alpm_bl_low = 3;
+		asus_alpm_bl_high = 400;
+		asus_alpm_bl_low = 50;
 	} else if (strncmp(lcd_stage, "5", 1) == 0) { //PR
-		asus_alpm_bl_high = 100;
-		asus_alpm_bl_low = 3;
+		asus_alpm_bl_high = 400;
+		asus_alpm_bl_low = 50;
 	} else {
-		asus_alpm_bl_high = 344;
-		asus_alpm_bl_low = 0;
+		asus_alpm_bl_high = 459;
+		asus_alpm_bl_low = 50;
 	}
 }
 

@@ -748,13 +748,11 @@ int asus_display_convert_backlight(struct dsi_panel *panel, int bl_lvl)
 	int backlight_converted = bl_lvl;
 
 	if (asus_display_in_aod()) {
-		if (bl_lvl > ASUS_AOD_THRES) {
+		if (panel->asus_global_hbm_mode)
 			backlight_converted = asus_alpm_bl_high;
-			pr_err("[Display] convert to %d, reason AOD\n", asus_alpm_bl_high);
-		} else if (bl_lvl == ASUS_AOD_THRES){
+		else
 			backlight_converted = asus_alpm_bl_low;
-			pr_err("[Display] convert to %d, reason AOD\n", asus_alpm_bl_low);
-		}
+		pr_err("[Display] convert to %d, reason AOD\n", backlight_converted);
 	} else if (has_pxlw_video_blocker) {
 		pr_err("[Display] do not convert backlight, reason pixelworks video blocker\n");
 	}
