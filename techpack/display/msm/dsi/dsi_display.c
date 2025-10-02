@@ -9876,6 +9876,13 @@ int dsi_display_disable(struct dsi_display *display)
 		return -EINVAL;
 	}
 
+	// Switch from 160->60 before off to prevent black screen of death
+	if (asus_current_fps == 160) {
+		printk("[Display] 160 fps off, set 60 fps, type 2\n");
+		dsi_panel_asus_switch_fps(display->panel, 2);
+		usleep_range(150 * 1000, 151* 1000);
+	}
+
 	pr_err("[Display] display off +++ \n");
 
 	// set panel ready to false to prevent future command setting
