@@ -5629,20 +5629,20 @@ void asus_display_set_local_hbm(int enable)
 void asus_display_set_panel_aod_bl(void)
 {
 	if (strncmp(lcd_stage, "2", 1) == 0){ //SR
-		asus_alpm_bl_high = 344;
-		asus_alpm_bl_low = 0;
+		asus_alpm_bl_high = 1376;
+		asus_alpm_bl_low = 172;
 	} else if (strncmp(lcd_stage, "3", 1) == 0) { //ER1
-		asus_alpm_bl_high = 344;
-		asus_alpm_bl_low = 0;
+		asus_alpm_bl_high = 1376;
+		asus_alpm_bl_low = 172;
 	} else if (strncmp(lcd_stage, "4", 1) == 0) { //ER2
-		asus_alpm_bl_high = 100;
-		asus_alpm_bl_low = 3;
+		asus_alpm_bl_high = 400;
+		asus_alpm_bl_low = 50;
 	} else if (strncmp(lcd_stage, "5", 1) == 0) { //PR
-		asus_alpm_bl_high = 100;
-		asus_alpm_bl_low = 3;
+		asus_alpm_bl_high = 400;
+		asus_alpm_bl_low = 50;
 	} else {
-		asus_alpm_bl_high = 344;
-		asus_alpm_bl_low = 0;
+		asus_alpm_bl_high = 1376;
+		asus_alpm_bl_low = 172;
 	}
 }
 
