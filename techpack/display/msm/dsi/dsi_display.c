@@ -1393,7 +1393,6 @@ int dsi_display_set_power(struct drm_connector *connector,
 		if (asus_var_manual_idle_out || !asus_display_in_aod()) {
 			pr_err("[Display] set LP1 command\n");
 			rc = dsi_panel_set_lp1(display->panel);
-			asus_display_set_panel_aod_bl();
 			asus_var_manual_idle_out = false;
 			// ASUS_BSP +++ Touch
 			phone_touch_suspend();
@@ -1408,7 +1407,6 @@ int dsi_display_set_power(struct drm_connector *connector,
 		if (asus_var_manual_idle_out) {
 			printk("[Display] previous idle out, send LP1 command\n");
 			rc = dsi_panel_set_lp1(display->panel);
-			asus_display_set_panel_aod_bl();
 			asus_var_manual_idle_out = false;
 			old_has_fov_makser = false;
 			asus_drm_notify(ASUS_NOTIFY_SPOT_READY, 0);
@@ -7253,6 +7251,8 @@ static int dsi_display_bind(struct device *dev,
 	proc_create(HDCP_VERSION, 0666, NULL, &asus_display_proc_hdcp_version_ops);
 
 	asus_display_wq = create_workqueue("asus_lcd_wq");
+
+	asus_display_set_panel_aod_bl();
 	/* ASUS BSP Display --- */
 
 	goto error;
