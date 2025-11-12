@@ -235,6 +235,7 @@ struct dsi_panel {
 	int asus_global_hbm_mode;
 	int asus_global_hbm_pending_mode;
 	int asus_local_hbm_mode;
+	int asus_local_hbm_pending_mode;
 	int asus_global_hbm_cached_bl;
 
 	char asus_initial_code_version[16];

@@ -121,6 +121,7 @@ void asus_display_set_global_hbm_fod(void);
 void asus_display_set_panel_aod_bl(void);
 int  asus_display_get_global_hbm_delay(bool on);
 void asus_display_set_global_hbm_delay(bool on, int value);
+void asus_display_set_local_hbm(int enable);
 
 // display driver workqueue
 static struct workqueue_struct *asus_display_wq;
@@ -1442,6 +1443,13 @@ int dsi_display_set_power(struct drm_connector *connector,
 
 		// switch the correct fps from upper layer
 		asus_display_apply_fps_setting();
+
+		// Apply local HBM if needed
+		if (g_display->panel->asus_local_hbm_pending_mode) {
+			pr_err("[Display] screen turn ON and need local HBM, enable it");
+			asus_display_set_local_hbm(1);
+		}
+
 		asus_waking_from_aod = false;
 		break;
 	case SDE_MODE_DPMS_OFF:
@@ -5610,6 +5618,9 @@ void asus_display_set_local_hbm(int enable)
 		gpio_set_value(g_display->asus_fod_exi1_gpio, enable);
 		gpio_set_value(g_display->asus_fod_exi2_gpio, enable);
 		g_display->panel->asus_local_hbm_mode = enable;
+
+		if (g_display->panel->asus_local_hbm_pending_mode)
+			g_display->panel->asus_local_hbm_pending_mode = false;
 	} else {
 		gpio_set_value(g_display->asus_fod_exi1_gpio, enable);
 		gpio_set_value(g_display->asus_fod_exi2_gpio, enable);
@@ -6495,7 +6506,7 @@ static ssize_t asus_display_proc_local_hbm_write(struct file *filp, const char *
 	if (!asus_display_panel_valid())
 		return -EINVAL;
 
-	if (!asus_display_in_normal_off()) {
+	if (g_display->panel->power_mode == SDE_MODE_DPMS_ON) {
 		if (strncmp(messages, "0", 1) == 0) {
 			asus_display_set_local_hbm(0);
 		} else if (strncmp(messages, "1", 1) == 0) {
@@ -6504,8 +6515,15 @@ static ssize_t asus_display_proc_local_hbm_write(struct file *filp, const char *
 			pr_err("[Display] don't match any hbm mode.\n");
 		}
 	} else {
-		pr_err("[Display] unable to set local hbm mode in off mode.\n");
-		g_display->panel->asus_local_hbm_mode = 0;
+		if (strncmp(messages, "0", 1) == 0) {
+			g_display->panel->asus_local_hbm_pending_mode = false;
+		} else if (strncmp(messages, "1", 1) == 0) {
+			pr_err("[Display] unable to set local hbm mode in off or lp modes. Wait for screen on.\n");
+			g_display->panel->asus_local_hbm_pending_mode = true;
+		} else {
+			pr_err("[Display] don't match any hbm mode.\n");
+		}
+		
 	}
 
 	return len;
