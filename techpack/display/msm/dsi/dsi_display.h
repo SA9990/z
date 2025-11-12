@@ -277,6 +277,8 @@ struct dsi_display {
 
 	int asus_fod_exi1_gpio;
 	int asus_fod_exi2_gpio;
+
+	atomic_t fod_ui;
 };
 
 /* ASUS BSP Display +++ */
@@ -760,5 +762,7 @@ int dsi_display_cont_splash_config(void *display);
  */
 int dsi_display_get_panel_vfp(void *display,
 	int h_active, int v_active);
+
+void dsi_display_set_fod_ui(struct dsi_display *display, bool status);
 
 #endif /* _DSI_DISPLAY_H_ */
